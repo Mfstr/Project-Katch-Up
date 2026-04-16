@@ -16,7 +16,6 @@ export const syncCalendar = async (url: string) =>
         const data = await response.text();
 
         const webEvents = ical.sync.parseICS(data);
-        // console.log(webEvents);
 
         const events = Object.values(webEvents).filter((ev): ev is ical.VEvent => ev !== undefined && ev.type === 'VEVENT');
 
