@@ -1,0 +1,15 @@
+info:
+  name: Complete Timer
+  type: http
+  seq: 1
+
+http:
+  method: POST
+  url: http://localhost:5050/api/timer/complete
+  auth: inherit
+
+settings:
+  encodeUrl: true
+  timeout: 0
+  followRedirects: true
+  maxRedirects: 5
