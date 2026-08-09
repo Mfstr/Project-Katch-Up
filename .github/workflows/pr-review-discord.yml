@@ -9,57 +9,64 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout code
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
         with:
           fetch-depth: 0
 
       - name: Get PR Statistics
         id: stats
         run: |
-          BASE_COMMIT=${{ github.event.pull_request.base.sha }}
-          HEAD_COMMIT=${{ github.event.pull_request.head.sha }}
-          
-          FILES_CHANGED=$(git diff --name-only $BASE_COMMIT..$HEAD_COMMIT | wc -l)
-          DIFF_STAT=$(git diff --numstat $BASE_COMMIT..$HEAD_COMMIT | awk '{add+=$1; del+=$2} END {print add","del}')
-          
-          ADDITIONS=$(echo $DIFF_STAT | cut -d',' -f1)
-          DELETIONS=$(echo $DIFF_STAT | cut -d',' -f2)
-          
-          ADDITIONS=${ADDITIONS:-0}
-          DELETIONS=${DELETIONS:-0}
-          
-          echo "files_changed=$FILES_CHANGED" >> $GITHUB_OUTPUT
-          echo "additions=$ADDITIONS" >> $GITHUB_OUTPUT
-          echo "deletions=$DELETIONS" >> $GITHUB_OUTPUT
+          BASE_COMMIT="${{ github.event.pull_request.base.sha }}"
+          HEAD_COMMIT="${{ github.event.pull_request.head.sha }}"
+
+          FILES_CHANGED=$(git diff --name-only "$BASE_COMMIT" "$HEAD_COMMIT" | wc -l)
+          DIFF_STAT=$(git diff --numstat "$BASE_COMMIT" "$HEAD_COMMIT" | awk '{add+=$1; del+=$2} END {print add","del}')
+
+          ADDITIONS=$(echo "$DIFF_STAT" | cut -d',' -f1)
+          DELETIONS=$(echo "$DIFF_STAT" | cut -d',' -f2)
+
+          echo "files_changed=${FILES_CHANGED:-0}" >> "$GITHUB_OUTPUT"
+          echo "additions=${ADDITIONS:-0}" >> "$GITHUB_OUTPUT"
+          echo "deletions=${DELETIONS:-0}" >> "$GITHUB_OUTPUT"
 
       - name: Send Discord Webhook
+        env:
+          DISCORD_WEBHOOK_URL: ${{ secrets.DISCORD_WEBHOOK_URL }}
+          PR_NUMBER: ${{ github.event.pull_request.number }}
+          PR_TITLE: ${{ github.event.pull_request.title }}
+          PR_AUTHOR: ${{ github.event.pull_request.user.login }}
+          PR_URL: ${{ github.event.pull_request.html_url }}
+          FILES_CHANGED: ${{ steps.stats.outputs.files_changed }}
+          ADDITIONS: ${{ steps.stats.outputs.additions }}
+          DELETIONS: ${{ steps.stats.outputs.deletions }}
         run: |
-          curl -X POST \
+          curl -sS -X POST "$DISCORD_WEBHOOK_URL" \
             -H "Content-Type: application/json" \
-            -d '{
-              "username": "Project Katch-Up",
-              "embeds": [
-                {
-                  "title": "🔍 PR #${{ github.event.pull_request.number }} - ${{ github.event.pull_request.title }}",
-                  "description": "New pull request from **@${{ github.event.pull_request.user.login }}**",
-                  "url": "${{ github.event.pull_request.html_url }}",
-                  "color": 3447003,
-                  "fields": [
-                    {
-                      "name": "📊 Changes",
-                      "value": "**Files:** ${{ steps.stats.outputs.files_changed }}\n**+ Added:** ${{ steps.stats.outputs.additions }}\n**- Deleted:** ${{ steps.stats.outputs.deletions }}",
-                      "inline": false
-                    },
-                    {
-                      "name": "🔗 View PR",
-                      "value": "[${{ github.event.pull_request.html_url }}](${{ github.event.pull_request.html_url }})",
-                      "inline": false
-                    }
-                  ],
-                  "footer": {
-                    "text": "Project Katch-Up | Automated PR Review"
+            -d @- <<PAYLOAD
+          {
+            "username": "Project Katch-Up",
+            "embeds": [
+              {
+                "title": "🔍 PR #${PR_NUMBER} - ${PR_TITLE}",
+                "description": "New pull request from **@${PR_AUTHOR}**",
+                "url": "${PR_URL}",
+                "color": 3447003,
+                "fields": [
+                  {
+                    "name": "📊 Changes",
+                    "value": "**Files:** ${FILES_CHANGED}\n**+ Added:** ${ADDITIONS}\n**- Deleted:** ${DELETIONS}",
+                    "inline": false
+                  },
+                  {
+                    "name": "🔗 View PR",
+                    "value": "${PR_URL}",
+                    "inline": false
                   }
+                ],
+                "footer": {
+                  "text": "Project Katch-Up | Automated PR Review"
                 }
-              ]
-            }' \
-            ${{ secrets.DISCORD_WEBHOOK_URL }}
+              }
+            ]
+          }
+          PAYLOAD
