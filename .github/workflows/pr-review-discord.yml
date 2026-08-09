@@ -1,0 +1,67 @@
+name: PR Review to Discord
+
+on:
+  pull_request:
+    types: [opened, synchronize, reopened]
+
+jobs:
+  notify-discord:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+        with:
+          fetch-depth: 0
+
+      - name: Get PR Statistics
+        id: stats
+        run: |
+          BASE_COMMIT=${{ github.event.pull_request.base.sha }}
+          HEAD_COMMIT=${{ github.event.pull_request.head.sha }}
+          
+          FILES_CHANGED=$(git diff --name-only $BASE_COMMIT..$HEAD_COMMIT | wc -l)
+          DIFF_STAT=$(git diff --numstat $BASE_COMMIT..$HEAD_COMMIT | awk '{add+=$1; del+=$2} END {print add","del}')
+          
+          ADDITIONS=$(echo $DIFF_STAT | cut -d',' -f1)
+          DELETIONS=$(echo $DIFF_STAT | cut -d',' -f2)
+          
+          ADDITIONS=${ADDITIONS:-0}
+          DELETIONS=${DELETIONS:-0}
+          
+          echo "files_changed=$FILES_CHANGED" >> $GITHUB_OUTPUT
+          echo "additions=$ADDITIONS" >> $GITHUB_OUTPUT
+          echo "deletions=$DELETIONS" >> $GITHUB_OUTPUT
+
+      - name: Send Discord Webhook
+        uses: actions/http-request@v1
+        with:
+          url: ${{ secrets.DISCORD_WEBHOOK_URL }}
+          method: POST
+          headers: '{"Content-Type": "application/json"}'
+          data: |
+            {
+              "username": "Project Katch-Up",
+              "embeds": [
+                {
+                  "title": "🔍 PR #${{ github.event.pull_request.number }} - ${{ github.event.pull_request.title }}",
+                  "description": "New pull request from **@${{ github.event.pull_request.user.login }}**",
+                  "url": "${{ github.event.pull_request.html_url }}",
+                  "color": 3447003,
+                  "fields": [
+                    {
+                      "name": "📊 Changes",
+                      "value": "**Files:** ${{ steps.stats.outputs.files_changed }}\n**+ Added:** ${{ steps.stats.outputs.additions }}\n**- Deleted:** ${{ steps.stats.outputs.deletions }}",
+                      "inline": false
+                    },
+                    {
+                      "name": "🔗 View PR",
+                      "value": "[${{ github.event.pull_request.html_url }}](${{ github.event.pull_request.html_url }})",
+                      "inline": false
+                    }
+                  ],
+                  "footer": {
+                    "text": "Project Katch-Up | Automated PR Review"
+                  }
+                }
+              ]
+            }
