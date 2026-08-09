@@ -33,13 +33,10 @@ jobs:
           echo "deletions=$DELETIONS" >> $GITHUB_OUTPUT
 
       - name: Send Discord Webhook
-        uses: actions/http-request@v1
-        with:
-          url: ${{ secrets.DISCORD_WEBHOOK_URL }}
-          method: POST
-          headers: '{"Content-Type": "application/json"}'
-          data: |
-            {
+        run: |
+          curl -X POST \
+            -H "Content-Type: application/json" \
+            -d '{
               "username": "Project Katch-Up",
               "embeds": [
                 {
@@ -64,4 +61,5 @@ jobs:
                   }
                 }
               ]
-            }
+            }' \
+            ${{ secrets.DISCORD_WEBHOOK_URL }}
