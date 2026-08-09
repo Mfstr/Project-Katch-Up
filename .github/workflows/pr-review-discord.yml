@@ -1,8 +1,11 @@
-name: PR Review to Discord
+name: GitHub Activity to Discord
 
 on:
   pull_request:
     types: [opened, synchronize, reopened]
+  push:
+    branches:
+      - '**'
 
 jobs:
   notify-discord:
@@ -13,8 +16,10 @@ jobs:
         with:
           fetch-depth: 0
 
+      # ---------- PR EVENT: gather stats ----------
       - name: Get PR Statistics
-        id: stats
+        if: github.event_name == 'pull_request'
+        id: pr_stats
         run: |
           BASE_COMMIT="${{ github.event.pull_request.base.sha }}"
           HEAD_COMMIT="${{ github.event.pull_request.head.sha }}"
@@ -29,16 +34,65 @@ jobs:
           echo "additions=${ADDITIONS:-0}" >> "$GITHUB_OUTPUT"
           echo "deletions=${DELETIONS:-0}" >> "$GITHUB_OUTPUT"
 
-      - name: Send Discord Webhook
+      # ---------- PUSH EVENT: skip if an open PR already covers this branch ----------
+      - name: Check for existing open PR on this branch
+        if: github.event_name == 'push'
+        id: pr_check
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          BRANCH_NAME: ${{ github.ref_name }}
+        run: |
+          OPEN_PR=$(curl -sS -H "Authorization: token $GH_TOKEN" \
+            "https://api.github.com/repos/${{ github.repository }}/pulls?head=${{ github.repository_owner }}:${BRANCH_NAME}&state=open" \
+            | grep -c '"number"' || true)
+
+          if [ "$OPEN_PR" -gt 0 ]; then
+            echo "has_open_pr=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "has_open_pr=false" >> "$GITHUB_OUTPUT"
+          fi
+
+      # ---------- PUSH EVENT: gather stats (only if no open PR) ----------
+      - name: Get Push Statistics
+        if: github.event_name == 'push' && steps.pr_check.outputs.has_open_pr == 'false'
+        id: push_stats
+        run: |
+          BEFORE="${{ github.event.before }}"
+          AFTER="${{ github.event.after }}"
+          EMPTY_SHA="0000000000000000000000000000000000000000"
+
+          if [ "$BEFORE" = "$EMPTY_SHA" ]; then
+            # New branch, no previous commit to diff against
+            FILES_CHANGED=$(git show --name-only --pretty="" "$AFTER" | wc -l)
+            ADDITIONS="0"
+            DELETIONS="0"
+          else
+            FILES_CHANGED=$(git diff --name-only "$BEFORE" "$AFTER" | wc -l)
+            DIFF_STAT=$(git diff --numstat "$BEFORE" "$AFTER" | awk '{add+=$1; del+=$2} END {print add","del}')
+            ADDITIONS=$(echo "$DIFF_STAT" | cut -d',' -f1)
+            DELETIONS=$(echo "$DIFF_STAT" | cut -d',' -f2)
+          fi
+
+          COMMIT_MSG=$(git log -1 --pretty=%s "$AFTER")
+          COMMIT_MSG_ESCAPED=$(echo "$COMMIT_MSG" | sed 's/"/\\"/g')
+
+          echo "files_changed=${FILES_CHANGED:-0}" >> "$GITHUB_OUTPUT"
+          echo "additions=${ADDITIONS:-0}" >> "$GITHUB_OUTPUT"
+          echo "deletions=${DELETIONS:-0}" >> "$GITHUB_OUTPUT"
+          echo "commit_msg=${COMMIT_MSG_ESCAPED}" >> "$GITHUB_OUTPUT"
+
+      # ---------- Send PR notification ----------
+      - name: Send Discord Webhook (Pull Request)
+        if: github.event_name == 'pull_request'
         env:
           DISCORD_WEBHOOK_URL: ${{ secrets.DISCORD_WEBHOOK_URL }}
           PR_NUMBER: ${{ github.event.pull_request.number }}
           PR_TITLE: ${{ github.event.pull_request.title }}
           PR_AUTHOR: ${{ github.event.pull_request.user.login }}
           PR_URL: ${{ github.event.pull_request.html_url }}
-          FILES_CHANGED: ${{ steps.stats.outputs.files_changed }}
-          ADDITIONS: ${{ steps.stats.outputs.additions }}
-          DELETIONS: ${{ steps.stats.outputs.deletions }}
+          FILES_CHANGED: ${{ steps.pr_stats.outputs.files_changed }}
+          ADDITIONS: ${{ steps.pr_stats.outputs.additions }}
+          DELETIONS: ${{ steps.pr_stats.outputs.deletions }}
         run: |
           curl -sS -X POST "$DISCORD_WEBHOOK_URL" \
             -H "Content-Type: application/json" \
@@ -65,6 +119,50 @@ jobs:
                 ],
                 "footer": {
                   "text": "Project Katch-Up | Automated PR Review"
+                }
+              }
+            ]
+          }
+          PAYLOAD
+
+      # ---------- Send push notification (only if no open PR covers it) ----------
+      - name: Send Discord Webhook (Push)
+        if: github.event_name == 'push' && steps.pr_check.outputs.has_open_pr == 'false'
+        env:
+          DISCORD_WEBHOOK_URL: ${{ secrets.DISCORD_WEBHOOK_URL }}
+          PUSHER: ${{ github.actor }}
+          BRANCH_NAME: ${{ github.ref_name }}
+          COMMIT_URL: ${{ github.event.compare }}
+          FILES_CHANGED: ${{ steps.push_stats.outputs.files_changed }}
+          ADDITIONS: ${{ steps.push_stats.outputs.additions }}
+          DELETIONS: ${{ steps.push_stats.outputs.deletions }}
+          COMMIT_MSG: ${{ steps.push_stats.outputs.commit_msg }}
+        run: |
+          curl -sS -X POST "$DISCORD_WEBHOOK_URL" \
+            -H "Content-Type: application/json" \
+            -d @- <<PAYLOAD
+          {
+            "username": "Project Katch-Up",
+            "embeds": [
+              {
+                "title": "📤 Push to ${BRANCH_NAME}",
+                "description": "**@${PUSHER}** pushed: ${COMMIT_MSG}",
+                "url": "${COMMIT_URL}",
+                "color": 3066993,
+                "fields": [
+                  {
+                    "name": "📊 Changes",
+                    "value": "**Files:** ${FILES_CHANGED}\n**+ Added:** ${ADDITIONS}\n**- Deleted:** ${DELETIONS}",
+                    "inline": false
+                  },
+                  {
+                    "name": "🔗 View Diff",
+                    "value": "${COMMIT_URL}",
+                    "inline": false
+                  }
+                ],
+                "footer": {
+                  "text": "Project Katch-Up | Push Notification"
                 }
               }
             ]
