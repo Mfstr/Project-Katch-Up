@@ -1,0 +1,30 @@
+{
+  "name": "project-katch-up",
+  "version": "1.0.0",
+  "description": "timer for toamtoes",
+  "main": "index.js",
+  "directories": {
+    "test": "tests"
+  },
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/Mfstr/Project-Katch-Up.git"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/Mfstr/Project-Katch-Up/issues"
+  },
+  "homepage": "https://github.com/Mfstr/Project-Katch-Up#readme",
+  "volta": {
+    "node": "22.18.0",
+    "npm": "10.9.3"
+  },
+  "devDependencies": {
+    "typescript": "^6.0.2"
+  }
+}
