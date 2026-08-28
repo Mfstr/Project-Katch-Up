@@ -7,7 +7,9 @@
     "test": "tests"
   },
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "lint": "eslint .",
+    "format": "prettier --write \".\""
   },
   "repository": {
     "type": "git",
@@ -25,6 +27,13 @@
     "npm": "10.9.3"
   },
   "devDependencies": {
-    "typescript": "^6.0.2"
+    "@eslint/js": "^10.0.1",
+    "eslint": "^9.39.5",
+    "eslint-config-prettier": "^10.1.8",
+    "eslint-plugin-react": "^7.37.5",
+    "globals": "^17.11.0",
+    "prettier": "^3.9.6",
+    "typescript": "^6.0.2",
+    "typescript-eslint": "^8.68.0"
   }
 }
