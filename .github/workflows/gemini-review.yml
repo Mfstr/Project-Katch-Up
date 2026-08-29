@@ -19,6 +19,8 @@ jobs:
 
       - name: Execute Gemini AI Code Review
         uses: sshnaidm/gemini-code-review-action@v2
+        env:
+          GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
         with:
           gemini-key: ${{ secrets.GEMINI_API_KEY }}
           github-token: ${{ secrets.GITHUB_TOKEN }}
