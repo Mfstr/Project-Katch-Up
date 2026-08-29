@@ -1,4 +1,3 @@
-```markdown
 # Project Katch-Up
 
 > A unified productivity platform combining multi-source task aggregation with an integrated Pomodoro focus timer.
@@ -37,25 +36,19 @@
    ```bash
    git clone [https://github.com/your-org/project-katch-up.git](https://github.com/your-org/project-katch-up.git)
    cd project-katch-up
-
-```
+   ```
 
 2. **Initialize environment variables:**
-```bash
-cp .env.example .env
-
-```
-
+   ```bash
+   cp .env.example .env
+   ```
 
 3. **Start all services:**
-> **TODO:** Docker Compose configuration and containerized startup script in progress.
-
+   > **TODO:** Docker Compose configuration and containerized startup script in progress.
 
 4. **Access the application:**
-* **Web Client:** `http://localhost:3000`
-* **API Gateway / Health Check:** `http://localhost:4000/api/health`
-
-
+   * **Web Client:** `http://localhost:3000`
+   * **API Gateway / Health Check:** `http://localhost:4000/api/health`
 
 ---
 
@@ -90,10 +83,9 @@ Commits must follow the **Conventional Commits** specification:
 [optional body]
 
 [optional footer(s)]
-
 ```
 
-#### Common Types:
+#### Common Types
 
 * `feat`: A new user-facing feature or API endpoint.
 * `fix`: A bug fix.
@@ -102,42 +94,32 @@ Commits must follow the **Conventional Commits** specification:
 * `test`: Adding missing unit, integration, or E2E tests.
 * `chore`: Tooling, build scripts, or package manager updates.
 
-#### Examples:
+#### Examples
 
 ```bash
 git commit -m "feat(timer): implement auto-pause on window blur"
 git commit -m "fix(db): handle unique constraint collision on user registration"
 git commit -m "chore(deps): bump pg driver to v8.11.0"
-
 ```
 
 ### Pull Request & Review Workflow
 
 1. **Pull Request Creation:**
-* Target branch must always be `main`.
-* Fill out all required fields in the PR template (linked issue, description, verification steps).
-
+   * Target branch must always be `main`.
+   * Fill out all required fields in the PR template (linked issue, description, verification steps).
 
 2. **Automated Checks:**
-* All PRs must pass linting (`npm run lint`), type-checking (`npm run typecheck`), and unit test suites before merge.
-
+   * All PRs must pass linting (`npm run lint`), type-checking (`npm run typecheck`), and unit test suites before merge.
 
 3. **Peer Review:**
-* At least **one approving review** from a team member is required.
-* Address all comments directly or resolve open discussions before requesting re-review.
-
+   * At least **one approving review** from a team member is required.
+   * Address all comments directly or resolve open discussions before requesting re-review.
 
 4. **Merge Method:**
-* Use **Squash and Merge** to maintain a linear and clean `main` history.
-
-
+   * Use **Squash and Merge** to maintain a linear and clean `main` history.
 
 ---
 
 ## License
 
 Distributed under the MIT License. See `LICENSE` for more information.
-
-```
-
-```
