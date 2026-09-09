@@ -34,6 +34,16 @@ export default defineConfig([
     },
   },
 
+{
+    files: ['tests/**/*.{js,ts,jsx,tsx}', '**/*.test.{js,ts,jsx,tsx}'],
+    languageOptions: {
+      globals: {
+        ...globals.jest,
+        ...globals.node,
+      },
+    },
+  },
+
   {
     files: ['frontend/**/*.{jsx,tsx}'],
     plugins: {
