@@ -37,7 +37,7 @@ export default defineConfig([
   {
     files: ['frontend/**/*.{jsx,tsx}'],
     plugins: {
-      react,
+      react: pluginReact,
     },
     settings: {
       react: {
