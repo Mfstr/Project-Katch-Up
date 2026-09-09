@@ -40,6 +40,32 @@ AI generated a categorized breakdown of Prototype 1 technical deliverables, spri
 - Documented project agreements in repository markdown files.
 
 ---
+## Entry [X]: Prototype 1 — [Feature/Task Name]
+
+- **Date:** [Sept 09, 2026]
+- **Team Member:** [Ashdon Kice] (`@materialsteam13`)
+- **Tool Used:** Duck.ai (GPT 5.6)
+- **Associated Git Issue:** Closes `#14` ([Linter & CI/CD Pipeline])
+- **Associated Feature Branch:** `chore/ci-linter`
+
+### Exact Prompt Submitted:
+
+> "I'm working on the linter for CI/CD on my senior design project using GitHub. Is there a way to set this up using GitHub actions and will I be doing that
+> in the website or on a file to commit to our GitHub? "
+
+### AI Output Summary & Code Generated:
+
+The Linter process for the CI/CD would be made in a yaml file that would be commited to our GitHub repo. To do so I needed to create a new branch in GitHub
+and create a lint.yml file that would include a trigger to run on Pull Requests.
+
+### Human Review, Refactoring & Modifications Made:
+
+- **Organize:** Instead of having a floating file called lint.yml I set up a folder within our github that would contain all the workflows for similar files.
+- **Designated versions:** Set our lint.yml to run on ubuntu-latest while we develop in WSL and Ubuntu, had node version set to 20.
+
+### Verification & Testing Method:
+
+- npm run lint was used to test the lint test. Only flagged issue was not connected to React.
 
 ## Blank Entry Template (Copy for New Entries)
 
