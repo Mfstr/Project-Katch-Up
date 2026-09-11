@@ -2,7 +2,7 @@ name: Code Quality & Linting
 
 on:
   pull_request:
-    branches: [ develop ]
+    branches: [develop]
 
 jobs:
   lint:
