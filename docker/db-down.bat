@@ -1,0 +1,1 @@
+@Get-Content down.sql | docker exec -i local_postgres psql -U postgres -d postgres

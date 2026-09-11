@@ -1,0 +1,70 @@
+name: CI Test Execution & Logging
+
+on:
+  pull_request:
+    branches: [develop]
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      #Step 1: checkout repo code
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      #Step 2: Set up Node.js matching Volta pin (node 22)
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+
+      #Step 3: Install dependencies
+      - name: Install dependencies
+        run: npm ci
+
+      #Step 4: Run Jest tests and pipe log output to a text file
+      - name: Run Unit Tests & Export Log
+        run: |
+          mkdir -p build-logs
+          npm test -- --ci --json --outputFile=build-logs/test-results.json 2>&1 | tee build-logs/ci-execution.log
+
+      #Step 5: Upload logs as a downloadable github artifact
+      - name: Upload Build & Test Logs
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: ci-test-logs-${{ github.sha }}
+          path: build-logs/
+          retention-days: 21 #EDIT THIS AS WE FIND NECESSARY
+
+      #Step 6: Post log summary directly back to the linked GitHub Issue
+      - name: Comment Log Summary on GitHub Issue
+        if: always()
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const fs = require('fs');
+            const prBody = context.payload.pull_request.body || '';
+
+            // Extract issue num linked in PR body
+            const issueMatch = prBody.match(/(?:Closes|Fixes|Resolves)\s+#(\d+)/i);
+
+            if (issueMatch) {
+                const issueNumber = issueMatch[1];
+                const logContent = fs.existsSync('build-logs/ci-execution.log') 
+                    ? fs.readFileSync('build-logs/ci-execution.log', 'utf8').slice(-1500)
+                    : 'No log output found.';
+
+                const commentBody = `### 🤖 CI Build & Test Execution Report\n\n` +
+                    `**Status:** ${context.job.status === 'success' ? '✅ PASSED' : '❌ FAILED'}\n` +
+                    `**Commit:** \`${context.sha.substring(0, 7)}\`\n` +
+                    `**Workflow Run Logs:** [View Actions Artifacts](${context.payload.pull_request.html_url}/checks)\n\n` +
+                    `\`\`\`text\n${logContent}\n\`\`\``;
+
+                await github.rest.issues.createComment({
+                    owner: context.repo.owner,
+                    repo: context.repo.repo,
+                    issue_number: issueNumber,
+                    body: commentBody
+                });
+            }

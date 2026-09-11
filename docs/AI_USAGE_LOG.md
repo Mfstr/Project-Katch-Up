@@ -1,0 +1,190 @@
+# AI Usage Log
+
+## Entry 1: Prototype 1 — Project Scaffolding & Initial Tasks Planning
+
+- **Date:** August 22, 2026
+- **Team Member:** Michael Foster (`@Mfstr`)
+- **Tool Used:** Gemini
+- **Associated Git Issue:** Closes `#5` (docs: create AI_USAGE_LOG.md template and compliance log)
+- **Associated Feature Branch:** `chore/project-setup-and-docs`
+
+### Exact Prompt Submitted:
+
+> "Review my repo and create checklist of what still needs done for Prototype 1: Foundation & Data Layer. Organize this between actionable tasks versus standards for the team to follow, and create GitHub project board issues."
+
+### AI Output Summary & Code Generated:
+
+AI generated a categorized breakdown of Prototype 1 technical deliverables, sprint schedules, Discord communication templates, and structured GitHub Issue bodies.
+
+### Human Review, Refactoring & Modifications Made:
+
+- **Scope Refinement:** Adjusted sprint dates to Sunday deadlines and reorganized workloads across a 3-person team.
+- **Rubric Calibration:** Aligned issue tasks with the course deliverables (Docker orchestration, migration lifecycles, static analysis, docstrings).
+- **Template Standardization:** Replaced generic AI log format with the professor's official log schema.
+
+### Verification & Testing Method:
+
+- Issues checked into GitHub project board and assigned to team milestones.
+- Documented project agreements in repository markdown files.
+
+---
+
+## Entry 2: Prototype 1 — Database & Docker Orchestration
+
+- **Date:** August 28, 2026
+- **Team Member:** Michael Foster (`@Mfstr`)
+- **Tool Used:** Gemini
+- **Associated Git Issue:** Closes `#1` (Set up Local PostgreSQL via Docker)
+- **Associated Feature Branch:** `feature/database-setup-script`
+
+### Exact Prompt Submitted:
+
+> "I am setting up a local development environment for my Node.js backend using PostgreSQL and Docker Compose. I want to automatically run my schema and seed SQL files when the container starts for the first time. What is the standard way to map initialization scripts into a postgres container without mounting my entire local directory?"
+
+### AI Output Summary & Code Generated:
+
+Gemini explained the `/docker-entrypoint-initdb.d/` directory mechanism built into the official Postgres image. It provided a sample `docker-compose.yml` snippet demonstrating how to use read-only volume binds (`:ro`) to map local `.sql` files directly into that directory.
+
+### Human Review, Refactoring & Modifications Made:
+
+- **Security & Portability:** I took the AI's volume mapping concept but completely rewrote the compose file to include a named volume (`docker_db_data`) so data persists between restarts. 
+- **Configuration:** I added a healthcheck block to ensure the database is fully ready to accept connections before any backend services attempt to connect to it.
+
+### Verification & Testing Method:
+
+- Executed `docker compose up -d db` and monitored `docker compose logs db` to verify that `01_up.sql` and `02_seed.sql` executed in sequential order successfully.
+
+---
+
+## Entry 3: Prototype 1 — Express Timer API Endpoints
+
+- **Date:** September 3, 2026
+- **Team Member:** Michael Foster (`@Mfstr`)
+- **Tool Used:** Gemini
+- **Associated Git Issue:** Closes `#3` (Implement Timer Start/Stop Routes)
+- **Associated Feature Branch:** `feature/timer-API-endpoints`
+
+### Exact Prompt Submitted:
+
+> "I am migrating my Express server to use ES Modules (`type: module` in package.json) instead of CommonJS. I am getting ReferenceErrors when trying to use `require()` and `module.exports`. Can you provide a quick reference on how to properly export and import an Express Router using ES modules?"
+
+### AI Output Summary & Code Generated:
+
+The AI provided a brief syntax reference explaining that `import express from 'express';` replaces `require('express')`, and `export default router;` replaces `module.exports = router;`. It provided a 5-line boilerplate router file.
+
+### Human Review, Refactoring & Modifications Made:
+
+- **Architecture:** I used the syntax knowledge to restructure my entire backend. I manually extracted the monolithic routing logic from `index.js` into modular files (`routes/timerRoutes.js` and `routes/calendarRoutes.js`).
+- **Error Handling:** I implemented `try/catch` blocks within the asynchronous route handlers to ensure standard `500` HTTP status codes are returned on failure, preventing unhandled promise rejections.
+
+### Verification & Testing Method:
+
+- Spun up the server via `node index.js` and executed the `curl` commands documented in the README to verify standard `200 OK` JSON responses.
+
+---
+
+## Entry 4: Prototype 1 — Linter & CI/CD Pipeline
+
+- **Date:** September 09, 2026
+- **Team Member:** Ashdon Kice (`@materialsteam13`)
+- **Tool Used:** Duck.ai (GPT 5.6)
+- **Associated Git Issue:** Closes `#14` (Linter & CI/CD Pipeline)
+- **Associated Feature Branch:** `chore/ci-linter`
+
+### Exact Prompt Submitted:
+
+> "I'm working on the linter for CI/CD on my senior design project using GitHub. Is there a way to set this up using GitHub actions and will I be doing that in the website or on a file to commit to our GitHub? "
+
+### AI Output Summary & Code Generated:
+
+The Linter process for the CI/CD would be made in a yaml file that would be commited to our GitHub repo. To do so I needed to create a new branch in GitHub and create a lint.yml file that would include a trigger to run on Pull Requests.
+
+### Human Review, Refactoring & Modifications Made:
+
+- **Organize:** Instead of having a floating file called lint.yml I set up a folder within our github that would contain all the workflows for similar files.
+- **Designated versions:** Set our lint.yml to run on ubuntu-latest while we develop in WSL and Ubuntu, had node version set to 20.
+
+### Verification & Testing Method:
+
+- `npm run lint` was used to test the lint test. Only flagged issue was not connected to React.
+
+---
+
+## Entry 5: Prototype 1 — CI/CD Secret Scanning (Trufflehog)
+
+- **Date:** September 10, 2026
+- **Team Member:** Michael Foster (`@Mfstr`)
+- **Tool Used:** GitHub Copilot / Gemini
+- **Associated Git Issue:** Closes `#23` (Implement Secret Scanning in GitHub Actions)
+- **Associated Feature Branch:** `chore/automate-ci`
+
+### Exact Prompt Submitted:
+
+> "I need to add a secret scanner to my GitHub repository. How can I run TruffleHog using GitHub Actions on all pull requests targeting the develop branch?"
+
+### AI Output Summary & Code Generated:
+
+The AI provided a basic YAML configuration using the `trufflesecurity/trufflehog@main` GitHub Action, showing how to trigger it `on: pull_request`.
+
+### Human Review, Refactoring & Modifications Made:
+
+- **Pipeline Optimization:** I took the baseline workflow and manually configured the `base` and `head` arguments dynamically using `${{ github.event.repository.default_branch }}` and `HEAD`. This ensures TruffleHog only scans the git diff of the specific pull request rather than scanning the entire repository history on every push, saving GitHub Action compute minutes.
+- **Workflow configuration:** Adjusted the extra_args to strictly include `--only-verified` to prevent the workflow from failing on false positive secrets.
+
+### Verification & Testing Method:
+
+- Opened a test Pull Request on GitHub and verified the Actions runner successfully spawned the TruffleHog container and passed the diff scan successfully.
+
+---
+
+## Entry 6: Prototype 1 — Project Documentation (README)
+
+- **Date:** September 10, 2026
+- **Team Member:** Michael Foster (`@Mfstr`)
+- **Tool Used:** Gemini
+- **Associated Git Issue:** Closes `#25` (Create Project Documentation)
+- **Associated Feature Branch:** `docs/readme`
+
+### Exact Prompt Submitted:
+
+> "I need to write a comprehensive README.md for my project. What is a standard structure or template for a full-stack open-source project that includes setup instructions, environment variables, and git branching standards?"
+
+### AI Output Summary & Code Generated:
+
+The AI provided a basic Markdown template outlining standard sections like 'Overview', 'Quick Start', 'Environment', and 'License'.
+
+### Human Review, Refactoring & Modifications Made:
+
+- **Content Creation:** I discarded the AI's filler text and fully authored the project overview to specifically describe Project Katch-Up's architecture and task aggregation engine.
+- **Onboarding Formatting:** I manually documented the `docker compose` startup commands, built a Markdown table detailing the `DATABASE_URL` environment variables, and established our team's specific Conventional Commits workflow.
+
+### Verification & Testing Method:
+
+- Previewed the Markdown file directly in WebStorm to ensure standard GitHub formatting, tables, and code blocks rendered correctly.
+
+---
+
+## Entry 7: Prototype 1 — Mock Supabase Client & Demo Fallbacks
+
+- **Date:** September 10, 2026
+- **Team Member:** Michael Foster (`@Mfstr`)
+- **Tool Used:** Gemini
+- **Associated Git Issue:** Closes `#31` (Implement Graceful Supabase Fallback for Live Demo)
+- **Associated Feature Branch:** `hotfix/mock-supabase`
+
+### Exact Prompt Submitted:
+
+> "I am going to present my project live and might not have access to my Supabase environment variables on the new machine. How can I modify my supabaseClient.js to gracefully fallback and not crash the Node.js server if `process.env.SUPABASE_URL` is missing?"
+
+### AI Output Summary & Code Generated:
+
+The AI suggested using short-circuit evaluation (the `||` operator) to assign placeholder URL and key strings if the environment variables are undefined before passing them to the `createClient` function.
+
+### Human Review, Refactoring & Modifications Made:
+
+- **Error Handling & Architecture:** I implemented the AI's fallback strategy, but added custom `console.warn` logging to ensure it is obvious to other developers when the server is silently running in mock mode. 
+- **Demo Preparedness:** I also authored a custom 'Live Demo Cheatsheet' document outlining the exact, foolproof git clone and startup commands needed to deploy the project locally without `.env` files.
+
+### Verification & Testing Method:
+
+- Temporarily renamed my local `.env` file to `.env.backup` and ran `node index.js`. Verified the server successfully started on port 3000 and emitted the warning message instead of throwing a fatal Reference Error.

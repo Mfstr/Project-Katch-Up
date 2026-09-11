@@ -9,12 +9,12 @@ jspm_packages/
 .env.production.local
 
 *.log
-*.sql
+
 *.dump
 
-/client/build/
-/client/dist/
-/server/dist/
+/frontend/build/
+/frontend/dist/
+/backend/dist/
 
 .DS_Store
 .DS_Store?

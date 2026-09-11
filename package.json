@@ -1,13 +1,18 @@
 {
   "name": "project-katch-up",
   "version": "1.0.0",
-  "description": "timer for toamtoes",
+  "description": "timer for tomatoes",
   "main": "index.js",
+  "type": "module",
   "directories": {
     "test": "tests"
   },
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "test": "node --experimental-vm-modules node_modules/jest/bin/jest.js",
+    "lint": "eslint .",
+    "lint:fix": "eslint . --fix",
+    "format": "prettier --write \".\"",
+    "format:check": "prettier --check \".\""
   },
   "repository": {
     "type": "git",
@@ -15,7 +20,7 @@
   },
   "keywords": [],
   "author": "",
-  "license": "ISC",
+  "license": "MIT",
   "bugs": {
     "url": "https://github.com/Mfstr/Project-Katch-Up/issues"
   },
@@ -25,6 +30,17 @@
     "npm": "10.9.3"
   },
   "devDependencies": {
-    "typescript": "^6.0.2"
+    "@eslint/js": "^9.39.5",
+    "eslint": "^9.39.5",
+    "eslint-config-prettier": "^10.1.8",
+    "eslint-plugin-react": "^7.37.5",
+    "globals": "^17.11.0",
+    "jest": "^30.5.1",
+    "prettier": "^3.9.6",
+    "typescript": "^6.0.2",
+    "typescript-eslint": "^8.68.0"
+  },
+  "dependencies": {
+    "express": "^5.2.1"
   }
 }

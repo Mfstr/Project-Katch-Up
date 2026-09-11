@@ -7,6 +7,7 @@
 ## Table of Contents
 - [Project Overview](#project-overview)
 - [Quick Start & Setup](#quick-start--setup)
+- [Testing Endpoints Locally](#testing-endpoints-locally)
 - [Environment Configuration](#environment-configuration)
 - [Development & Git Standards](#development--git-standards)
 - [License](#license)
@@ -34,8 +35,8 @@
 
 1. **Clone the repository:**
    ```bash
-   git clone [https://github.com/your-org/project-katch-up.git](https://github.com/your-org/project-katch-up.git)
-   cd project-katch-up
+   git clone https://github.com/Mfstr/Project-Katch-Up.git
+   cd Project-Katch-Up
    ```
 
 2. **Initialize environment variables:**
@@ -43,12 +44,60 @@
    cp .env.example .env
    ```
 
-3. **Start all services:**
-   > **TODO:** Docker Compose configuration and containerized startup script in progress.
+3. **Start the database via Docker:**
+   ```bash
+   cd docker
+   docker compose up -d db
+   ```
 
 4. **Access the application:**
    * **Web Client:** `http://localhost:3000`
    * **API Gateway / Health Check:** `http://localhost:4000/api/health`
+
+---
+
+## Testing Endpoints Locally
+
+If you'd like to test the raw API endpoints locally (outside of Docker), start the basic Express server using:
+
+```bash
+node index.js
+```
+
+The server will run on port `3000` by default.
+
+### Timer Routes
+
+**Start Timer**
+```bash
+curl -X POST http://localhost:3000/timer/start \
+  -H "Content-Type: application/json" \
+  -d '{"taskId": "123", "durationSeconds": 1500}'
+```
+
+**Pause Timer**
+```bash
+curl -X POST http://localhost:3000/timer/pause
+```
+
+**Stop Timer**
+```bash
+curl -X POST http://localhost:3000/timer/stop
+```
+
+**Reset Timer**
+```bash
+curl -X POST http://localhost:3000/timer/reset
+```
+
+### Calendar Routes
+
+**Sync Calendar**
+```bash
+curl -X POST http://localhost:3000/calendar/sync \
+  -H "Content-Type: application/json" \
+  -d '{"url": "https://example.com/calendar.ics"}'
+```
 
 ---
 
