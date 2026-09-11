@@ -58,9 +58,8 @@ jobs:
                             const commentBody = `### 🤖 CI Build & Test Execution Report\n\n` +
                                 `**Status:** ${context.job.status === 'success' ? '✅ PASSED' : '❌ FAILED'}\n` +
                                 `**Commit:** \`${context.sha.substring(0, 7)}\`\n` +
-                                `**Workflow Run Logs:** [View Actions Artifacts](${context.payload.pull_request.html_url}/checks)\n\n` +
+                                `**Workflow Run Logs:** [View Actions Artifacts](${context.payload.pull_request?.html_url || ''}/checks)\n\n` +
                                 `\`\`\`text\n${logContent}\n\`\`\``;
-
                             await github.rest.issues.createComment({
                                 owner: context.repo.owner,
                                 repo: context.repo.repo,
