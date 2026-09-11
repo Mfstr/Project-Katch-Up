@@ -6,7 +6,14 @@ import { defineConfig } from 'eslint/config';
 
 export default defineConfig([
   {
-    ignores: ['node_modules/**', 'dist/**', 'build/**', 'coverage/**', '.next/**', '.vite/**'],
+    ignores: [
+      '**/node_modules/**',
+      '**/dist/**',
+      '**/build/**',
+      '**/coverage/**',
+      '**/.next/**',
+      '**/.vite/**',
+    ],
   },
   {
     files: ['**/*.{js,mjs,cjs,jsx}'],
@@ -34,7 +41,7 @@ export default defineConfig([
     },
   },
 
-{
+  {
     files: ['tests/**/*.{js,ts,jsx,tsx}', '**/*.test.{js,ts,jsx,tsx}'],
     languageOptions: {
       globals: {
