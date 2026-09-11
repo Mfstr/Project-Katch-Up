@@ -1,6 +1,6 @@
 import express from 'express';
 const router = express.Router();
-import { syncCalendar } from '../server/dist/icalParser.js';
+import { syncCalendar } from '../backend/dist/icalParser.js';
 
 // API Endpoint for syncing the calendar
 router.post('/sync', async (req, res) => {
