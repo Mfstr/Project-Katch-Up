@@ -105,3 +105,30 @@ The AI provided a basic Markdown template outlining standard sections like 'Over
 ### Verification & Testing Method:
 
 - Previewed the Markdown file directly in WebStorm to ensure standard GitHub formatting, tables, and code blocks rendered correctly.
+
+---
+
+## Entry 5: Prototype 1 — Mock Supabase Client & Demo Fallbacks
+
+- **Date:** September 10, 2026
+- **Team Member:** Michael Foster (`@Mfstr`)
+- **Tool Used:** Gemini
+- **Associated Git Issue:** Closes `#31` (Implement Graceful Supabase Fallback for Live Demo)
+- **Associated Feature Branch:** `hotfix/mock-supabase`
+
+### Exact Prompt Submitted:
+
+> "I am going to present my project live and might not have access to my Supabase environment variables on the new machine. How can I modify my supabaseClient.js to gracefully fallback and not crash the Node.js server if `process.env.SUPABASE_URL` is missing?"
+
+### AI Output Summary & Code Generated:
+
+The AI suggested using short-circuit evaluation (the `||` operator) to assign placeholder URL and key strings if the environment variables are undefined before passing them to the `createClient` function.
+
+### Human Review, Refactoring & Modifications Made:
+
+- **Error Handling & Architecture:** I implemented the AI's fallback strategy, but added custom `console.warn` logging to ensure it is obvious to other developers when the server is silently running in mock mode. 
+- **Demo Preparedness:** I also authored a custom 'Live Demo Cheatsheet' document outlining the exact, foolproof git clone and startup commands needed to deploy the project locally without `.env` files.
+
+### Verification & Testing Method:
+
+- Temporarily renamed my local `.env` file to `.env.backup` and ran `node index.js`. Verified the server successfully started on port 3000 and emitted the warning message instead of throwing a fatal Reference Error.
