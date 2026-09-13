@@ -68,3 +68,10 @@ jobs:
                     body: commentBody
                 });
             }
+  call-security:
+    uses: ./.github/workflows/security.yml
+  call-lint:
+    uses: ./.github/workflows/lint.yml
+  call-trufflehog:
+    uses: ./.github/workflows/trufflehog.yml
+
