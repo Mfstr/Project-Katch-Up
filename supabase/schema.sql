@@ -18,8 +18,8 @@ CREATE TABLE public.tasks (
   title text,
   description text,
   is_complete boolean,
-  due_date time without time zone,
-  profile_id uuid UNIQUE,
+  due_date timestamp with time zone,
+  profile_id uuid,
   CONSTRAINT tasks_pkey PRIMARY KEY (id),
   CONSTRAINT tasks_profile_id_fkey FOREIGN KEY (profile_id) REFERENCES public.profiles(id)
 );
