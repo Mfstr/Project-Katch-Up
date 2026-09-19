@@ -39,7 +39,7 @@ CREATE TABLE public.pomodoro_sessions (
   id uuid NOT NULL,
   profile_id uuid NOT NULL,
   task_id bigint,
-  session_type text NOT NULL,
+  session_type VARCHAR NOT NULL,
   planned_duraton_seconds integer NOT NULL,
   actual_duration_seconds integer NOT NULL,
   was_interrupted boolean NOT NULL DEFAULT false,
