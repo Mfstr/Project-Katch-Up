@@ -4,6 +4,7 @@
 CREATE TABLE public.profiles (
   id uuid NOT NULL,
   created_at timestamp with time zone NOT NULL DEFAULT now(),
+  deleted_at timestamp with time zone,
   ical_url text UNIQUE,
   focus_interval integer,
   break_interval integer,
@@ -15,6 +16,7 @@ CREATE TABLE public.profiles (
 CREATE TABLE public.tasks (
   id bigint GENERATED ALWAYS AS IDENTITY NOT NULL,
   created_at timestamp with time zone NOT NULL DEFAULT now(),
+  deleted_at timestamp with time zone,
   title text,
   description text,
   is_complete boolean,
@@ -26,6 +28,7 @@ CREATE TABLE public.tasks (
 CREATE TABLE public.calendar (
   id bigint GENERATED ALWAYS AS IDENTITY NOT NULL,
   created_at timestamp with time zone NOT NULL DEFAULT now(),
+  deleted_at timestamp with time zone,
   name text,
   description text,
   ical_url text UNIQUE,
