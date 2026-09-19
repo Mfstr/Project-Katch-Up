@@ -31,3 +31,17 @@ CREATE TABLE public.calendar (
   ical_url text UNIQUE,
   CONSTRAINT calendar_pkey PRIMARY KEY (id)
 );
+
+CREATE TABLE public.pomodoro_sessions (
+  id uuid NOT NULL,
+  profile_id uuid NOT NULL,
+  task_id bigint,
+  session_type text NOT NULL,
+  planned_duraton_seconds integer NOT NULL,
+  actual_duration_seconds integer NOT NULL,
+  was_interrupted boolean NOT NULL DEFAULT false,
+  created_at timestamp with time zone NOT NULL DEFAULT now(),
+  CONSTRAINT pomodoro_sessions_pkey PRIMARY KEY (id),
+  CONSTRAINT pomodoro_sessions_profile_id_fkey FOREIGN KEY (profile_id) REFERENCES public.profiles(id),
+  CONSTRAINT pomodoro_sessions_task_id_fkey FOREIGN KEY (task_id) REFERENCES public.tasks(id)
+)
