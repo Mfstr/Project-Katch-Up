@@ -122,6 +122,7 @@ export type Database = {
       tasks: {
         Row: {
           created_at: string
+          deleted_at: string | null
           description: string | null
           due_date: string | null
           id: number
@@ -131,6 +132,7 @@ export type Database = {
         }
         Insert: {
           created_at?: string
+          deleted_at?: string | null
           description?: string | null
           due_date?: string | null
           id?: never
@@ -140,6 +142,7 @@ export type Database = {
         }
         Update: {
           created_at?: string
+          deleted_at?: string | null
           description?: string | null
           due_date?: string | null
           id?: never
