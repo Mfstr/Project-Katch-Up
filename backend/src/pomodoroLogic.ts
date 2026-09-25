@@ -1,17 +1,38 @@
-const PHASE_DURATIONS_MS = {
+export type TimerPhase = 'FOCUS' | 'SHORT_BREAK' | 'LONG_BREAK';
+
+export interface TimerConfig {
+    focusMinutes?: number;
+    shortBreakMinutes?: number;
+    longBreakMinutes?: number;
+    sessionsUntilLongBreak?: number;
+}
+
+export interface TimerStatus {
+    phase: TimerPhase;
+    remainingSeconds: number;
+    isActive: boolean;
+    endTime: number | null;
+    pomodoroCount: number;
+    sessionsUntilLongBreak: number;
+}
+
+const PHASE_DURATIONS_MS: Record<TimerPhase, number> = {
     FOCUS: 25 * 60 * 1000,
     SHORT_BREAK: 5 * 60 * 1000,
     LONG_BREAK: 15 * 60 * 1000,
 };
+
 export class PomodoroTimer {
-    endTime = null;
-    isActive = false;
-    currentPhase = 'FOCUS';
-    pomodoroCount = 0;
-    remainingMs;
-    phaseDurations;
-    sessionsUntilLongBreak;
-    constructor(config = {}) {
+    private endTime: number | null = null;
+    private isActive: boolean = false;
+    private currentPhase: TimerPhase = 'FOCUS';
+    private pomodoroCount: number = 0;
+    private remainingMs: number;
+
+    private readonly phaseDurations: Record<TimerPhase, number>;
+    private readonly sessionsUntilLongBreak: number;
+
+    constructor(config: TimerConfig = {}) {
         this.sessionsUntilLongBreak = config.sessionsUntilLongBreak ?? 4;
         this.phaseDurations = {
             FOCUS: (config.focusMinutes ?? 25) * 60 * 1000,
@@ -20,14 +41,16 @@ export class PomodoroTimer {
         };
         this.remainingMs = this.phaseDurations.FOCUS;
     }
-    start() {
+
+    public start(): number | null {
         if (!this.isActive) {
             this.endTime = Date.now() + this.remainingMs;
             this.isActive = true;
         }
         return this.endTime;
     }
-    pause() {
+
+    public pause(): number | null {
         if (this.isActive && this.endTime !== null) {
             this.remainingMs = Math.max(0, this.endTime - Date.now());
             this.endTime = null;
@@ -36,29 +59,33 @@ export class PomodoroTimer {
         }
         return null;
     }
+
     /**
      * Called when a phase naturally completes. Advances to the next phase and
      * increments the pomodoro count after each FOCUS session.
      * Returns the new phase so callers can notify clients.
      */
-    complete() {
+    public complete(): TimerPhase {
         this.isActive = false;
         this.endTime = null;
+
         if (this.currentPhase === 'FOCUS') {
             this.pomodoroCount += 1;
             this.currentPhase =
                 this.pomodoroCount % this.sessionsUntilLongBreak === 0
                     ? 'LONG_BREAK'
                     : 'SHORT_BREAK';
-        }
-        else {
+        } else {
             this.currentPhase = 'FOCUS';
         }
+
         this.remainingMs = this.phaseDurations[this.currentPhase];
         return this.currentPhase;
     }
-    getStatus() {
+
+    public getStatus(): TimerStatus {
         let remaining = this.remainingMs;
+
         if (this.isActive && this.endTime !== null) {
             remaining = Math.max(0, this.endTime - Date.now());
             if (remaining === 0) {
@@ -67,6 +94,7 @@ export class PomodoroTimer {
                 this.remainingMs = 0;
             }
         }
+
         return {
             phase: this.currentPhase,
             remainingSeconds: Math.floor(remaining / 1000),
@@ -76,7 +104,8 @@ export class PomodoroTimer {
             sessionsUntilLongBreak: this.sessionsUntilLongBreak,
         };
     }
-    reset() {
+
+    public reset(): void {
         this.endTime = null;
         this.isActive = false;
         this.currentPhase = 'FOCUS';
@@ -84,4 +113,3 @@ export class PomodoroTimer {
         this.remainingMs = this.phaseDurations.FOCUS;
     }
 }
-//# sourceMappingURL=pomodoroLogic.js.map
