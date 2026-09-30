@@ -1,0 +1,92 @@
+# ============================================================================
+# Pomodoro Timer Endpoints
+# ============================================================================
+
+# Get current timer status
+curl http://localhost:5050/api/timer/status
+
+# Start the timer
+curl -X POST http://localhost:5050/api/timer/start
+
+# Pause the timer
+curl -X POST http://localhost:5050/api/timer/pause
+
+# Mark current phase as complete (advances to next phase)
+curl -X POST http://localhost:5050/api/timer/complete
+
+# Reset the timer to initial state
+curl -X POST http://localhost:5050/api/timer/reset
+
+# ============================================================================
+# Calendar Management Endpoints
+# ============================================================================
+
+# List all calendars
+curl http://localhost:5050/api/calendars
+
+# Add a new calendar
+curl -X POST http://localhost:5050/api/calendars \
+  -H "Content-Type: application/json" \
+  -d '{
+    "url": "https://calendar.google.com/calendar/ical/example%40gmail.com/public/basic.ics",
+    "name": "My Google Calendar",
+    "description": "Personal calendar"
+  }'
+
+# Sync a specific calendar by ID (replace UUID-HERE with actual calendar ID)
+curl -X POST http://localhost:5050/api/calendars/UUID-HERE/sync
+
+# Delete a calendar by ID (replace UUID-HERE with actual calendar ID)
+curl -X DELETE http://localhost:5050/api/calendars/UUID-HERE
+
+# ============================================================================
+# Common Testing Workflow
+# ============================================================================
+
+# 1. Check initial timer status
+curl http://localhost:5050/api/timer/status
+
+# 2. Start timer
+curl -X POST http://localhost:5050/api/timer/start
+
+# 3. Check status again (should show timer running)
+curl http://localhost:5050/api/timer/status
+
+# 4. Complete phase (advances to next phase, increments session count)
+curl -X POST http://localhost:5050/api/timer/complete
+
+# 5. Check status (should show new phase)
+curl http://localhost:5050/api/timer/status
+
+# 6. List calendars (empty until you add one)
+curl http://localhost:5050/api/calendars
+
+# 7. Add a calendar
+curl -X POST http://localhost:5050/api/calendars \
+  -H "Content-Type: application/json" \
+  -d '{
+    "url": "https://example.com/calendar.ics",
+    "name": "Test Calendar"
+  }'
+
+# 8. List calendars again (should show the newly added calendar with its ID)
+curl http://localhost:5050/api/calendars
+
+# 9. Sync the calendar (replace with ID from step 8)
+curl -X POST http://localhost:5050/api/calendars/CALENDAR_ID_HERE/sync
+
+# 10. Delete the calendar
+curl -X DELETE http://localhost:5050/api/calendars/CALENDAR_ID_HERE
+
+# ============================================================================
+# Notes
+# ============================================================================
+
+# - Replace `UUID-HERE` and `CALENDAR_ID_HERE` with actual IDs returned from
+#   the `GET /api/calendars` endpoint
+# - The `.ics` URL in the calendar examples should be a valid iCalendar feed URL
+# - POST endpoints with JSON bodies require `-H "Content-Type: application/json"`
+# - The timer routes don't require authentication and work immediately
+#   (in-memory state)
+# - Calendar routes interact with your Supabase database, so responses depend
+#   on what's stored there
