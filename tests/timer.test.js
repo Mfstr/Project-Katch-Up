@@ -1,4 +1,4 @@
-import { PomodoroTimer } from '../server/src/pomodoroLogic.ts';
+import { PomodoroTimer } from '../backend/src/pomodoroLogic.ts';
 
 describe('Pomodoro Timer Logic', () => {
     let timer;
