@@ -4,7 +4,7 @@ import ReactDOM from "react-dom/client";
 function App() {
     return (
         <div className = "app">
-            <StartSession />
+            <SmartFocusUI />
         </div>
     );
 }
