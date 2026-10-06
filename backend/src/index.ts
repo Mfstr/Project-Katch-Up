@@ -53,8 +53,8 @@ app.get('/api/calendars', async (_req: Request, res: Response) => {
     try {
         const calendars = await listCalendars();
         res.json(calendars);
-    } catch (err: any) {
-        res.status(500).json({ error: err.message });
+    } catch (err: unknown) {
+        res.status(500).json({ error: err instanceof Error ? err.message : String(err) });
     }
 });
 
@@ -67,8 +67,8 @@ app.post('/api/calendars', async (req: Request, res: Response) => {
     try {
         const calendar = await addCalendar(url, name, description);
         res.status(201).json(calendar);
-    } catch (err: any) {
-        res.status(500).json({ error: err.message });
+    } catch (err: unknown) {
+        res.status(500).json({ error: err instanceof Error ? err.message : String(err) });
     }
 });
 
@@ -76,8 +76,8 @@ app.delete('/api/calendars/:id', async (req: Request, res: Response) => {
     try {
         await deleteCalendar(req.params['id'] as string);
         res.status(204).send();
-    } catch (err: any) {
-        res.status(500).json({ error: err.message });
+    } catch (err: unknown) {
+        res.status(500).json({ error: err instanceof Error ? err.message : String(err) });
     }
 });
 
@@ -85,8 +85,8 @@ app.post('/api/calendars/:id/sync', async (req: Request, res: Response) => {
     try {
         const count = await syncCalendarById(req.params['id'] as string);
         res.json({ message: `Synced ${count} task(s).`, count });
-    } catch (err: any) {
-        res.status(500).json({ error: err.message });
+    } catch (err: unknown) {
+        res.status(500).json({ error: err instanceof Error ? err.message : String(err) });
     }
 });
 
@@ -103,8 +103,8 @@ app.delete('/api/tasks/:id', async (req: Request, res: Response) => {
         }
         await softDeleteTask(taskId);
         res.status(204).send();
-    } catch (err: any) {
-        res.status(500).json({ error: err.message });
+    } catch (err: unknown) {
+        res.status(500).json({ error: err instanceof Error ? err.message : String(err) });
     }
 });
 

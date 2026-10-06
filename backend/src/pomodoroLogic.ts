@@ -16,11 +16,6 @@ export interface TimerStatus {
     sessionsUntilLongBreak: number;
 }
 
-const PHASE_DURATIONS_MS: Record<TimerPhase, number> = {
-    FOCUS: 25 * 60 * 1000,
-    SHORT_BREAK: 5 * 60 * 1000,
-    LONG_BREAK: 15 * 60 * 1000,
-};
 
 export class PomodoroTimer {
     private endTime: number | null = null;
