@@ -1,6 +1,8 @@
 import 'dotenv/config';
 import express from 'express';
 import cors from 'cors';
+import helmet from 'helmet';
+import rateLimit from 'express-rate-limit';
 import type { Request, Response } from 'express';
 import { PomodoroTimer } from './pomodoroLogic.js';
 import {
@@ -14,6 +16,7 @@ import { registerUser, loginUser } from './authService.js';
 import { verifyToken } from './verifyToken.js';
 
 const app = express();
+app.use(helmet());
 app.use(cors());
 app.use(express.json());
 
@@ -116,6 +119,15 @@ app.delete('/api/tasks/:id', async (req: Request, res: Response) => {
 // ---------------------------------------------------------------------------
 // Auth Routes
 // ---------------------------------------------------------------------------
+
+const authLimiter = rateLimit({
+    windowMs: 60 * 1000, // 1 minute
+    max: 10, // limit each IP to 10 requests per windowMs
+    message: { error: 'Too many requests, please try again after a minute.' },
+    standardHeaders: true,
+    legacyHeaders: false,
+});
+app.use('/api/auth', authLimiter);
 
 app.post('/api/auth/register', async (req: Request, res: Response) => {
     const { email, password } = req.body ?? {};
