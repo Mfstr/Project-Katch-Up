@@ -3,6 +3,7 @@ name: Code Quality & Linting
 on:
   pull_request:
     branches: [develop]
+  workflow_call:
 
 jobs:
   lint:

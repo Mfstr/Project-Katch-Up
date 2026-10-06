@@ -53,8 +53,7 @@ app.get('/api/calendars', async (_req: Request, res: Response) => {
         const calendars = await listCalendars();
         res.json(calendars);
     } catch (err: unknown) {
-        const error = err instanceof Error ? err.message : String(err);
-        res.status(500).json({ error });
+        res.status(500).json({ error: err instanceof Error ? err.message : String(err) });
     }
 });
 
@@ -68,8 +67,7 @@ app.post('/api/calendars', async (req: Request, res: Response) => {
         const calendar = await addCalendar(url, name, description);
         res.status(201).json(calendar);
     } catch (err: unknown) {
-        const error = err instanceof Error ? err.message : String(err);
-        res.status(500).json({ error });
+        res.status(500).json({ error: err instanceof Error ? err.message : String(err) });
     }
 });
 
@@ -78,8 +76,7 @@ app.delete('/api/calendars/:id', async (req: Request, res: Response) => {
         await deleteCalendar(req.params['id'] as string);
         res.status(204).send();
     } catch (err: unknown) {
-        const error = err instanceof Error ? err.message : String(err);
-        res.status(500).json({ error });
+        res.status(500).json({ error: err instanceof Error ? err.message : String(err) });
     }
 });
 
@@ -88,8 +85,7 @@ app.post('/api/calendars/:id/sync', async (req: Request, res: Response) => {
         const count = await syncCalendarById(req.params['id'] as string);
         res.json({ message: `Synced ${count} task(s).`, count });
     } catch (err: unknown) {
-        const error = err instanceof Error ? err.message : String(err);
-        res.status(500).json({ error });
+        res.status(500).json({ error: err instanceof Error ? err.message : String(err) });
     }
 });
 
