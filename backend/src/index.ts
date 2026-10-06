@@ -10,6 +10,7 @@ import {
     syncCalendarById,
 } from './calendarService.js';
 import { softDeleteTask } from './taskService.js';
+import { registerUser } from './authService.js';
 
 const app = express();
 app.use(cors());
@@ -103,6 +104,24 @@ app.delete('/api/tasks/:id', async (req: Request, res: Response) => {
         }
         await softDeleteTask(taskId);
         res.status(204).send();
+    } catch (err: unknown) {
+        res.status(500).json({ error: err instanceof Error ? err.message : String(err) });
+    }
+});
+
+// ---------------------------------------------------------------------------
+// Auth Routes
+// ---------------------------------------------------------------------------
+
+app.post('/api/auth/register', async (req: Request, res: Response) => {
+    const { email, password } = req.body ?? {};
+    if (!email || !password) {
+        res.status(400).json({ error: 'email and password are required.' });
+        return;
+    }
+    try {
+        const data = await registerUser(email, password);
+        res.status(201).json(data);
     } catch (err: unknown) {
         res.status(500).json({ error: err instanceof Error ? err.message : String(err) });
     }
