@@ -9,7 +9,6 @@ import {
     deleteCalendar,
     syncCalendarById,
 } from './calendarService.js';
-import { softDeleteTask } from './taskService.js';
 
 const app = express();
 app.use(cors());
@@ -85,24 +84,6 @@ app.post('/api/calendars/:id/sync', async (req: Request, res: Response) => {
     try {
         const count = await syncCalendarById(req.params['id'] as string);
         res.json({ message: `Synced ${count} task(s).`, count });
-    } catch (err: unknown) {
-        res.status(500).json({ error: err instanceof Error ? err.message : String(err) });
-    }
-});
-
-// ---------------------------------------------------------------------------
-// Task Management Routes
-// ---------------------------------------------------------------------------
-
-app.delete('/api/tasks/:id', async (req: Request, res: Response) => {
-    try {
-        const taskId = parseInt(req.params['id'] as string, 10);
-        if (isNaN(taskId)) {
-            res.status(400).json({ error: 'Invalid task ID' });
-            return;
-        }
-        await softDeleteTask(taskId);
-        res.status(204).send();
     } catch (err: unknown) {
         res.status(500).json({ error: err instanceof Error ? err.message : String(err) });
     }
