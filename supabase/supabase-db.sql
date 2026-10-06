@@ -1,37 +1,10 @@
--- 0. Mock Supabase Auth Environment
-create extension if not exists pgcrypto;
-create schema if not exists auth;
+-- Initial Schema for Project Katch-Up
+DROP TABLE IF EXISTS public.tasks CASCADE;
+DROP TABLE IF EXISTS public.pomodoro_sessions CASCADE;
+DROP TABLE IF EXISTS public.calendars CASCADE;
+DROP TABLE IF EXISTS public.calendar CASCADE; -- Removes your old calendar table
+DROP TABLE IF EXISTS public.profiles CASCADE;
 
-create or replace function auth.uid()
-returns uuid
-language sql stable
-as $$
-  select nullif(current_setting('request.jwt.claim.sub', true), '')::uuid;
-$$;
-
-do $$
-begin
-  if not exists (select from pg_roles where rolname = 'supabase_auth_admin') then
-    create role supabase_auth_admin;
-  end if;
-end
-$$;
-
-create table if not exists auth.users (
-    instance_id uuid,
-    id uuid primary key,
-    aud varchar(255),
-    role varchar(255),
-    email varchar(255) unique,
-    encrypted_password varchar(255),
-    email_confirmed_at timestamptz,
-    raw_app_meta_data jsonb,
-    raw_user_meta_data jsonb,
-    created_at timestamptz default now(),
-    updated_at timestamptz default now()
-);
-
--- 1. Profiles Table
 CREATE TABLE public.profiles (
   id uuid NOT NULL,
   created_at timestamp with time zone NOT NULL DEFAULT now(),
@@ -42,7 +15,6 @@ CREATE TABLE public.profiles (
   CONSTRAINT profiles_id_fkey FOREIGN KEY (id) REFERENCES auth.users(id) ON DELETE CASCADE
 );
 
--- 2. Calendars Table
 CREATE TABLE public.calendars (
   id bigint GENERATED ALWAYS AS IDENTITY NOT NULL,
   profile_id uuid NOT NULL,
@@ -54,7 +26,6 @@ CREATE TABLE public.calendars (
   CONSTRAINT calendars_profile_id_fkey FOREIGN KEY (profile_id) REFERENCES public.profiles(id) ON DELETE CASCADE
 );
 
--- 3. Tasks Table
 CREATE TABLE public.tasks (
   id bigint GENERATED ALWAYS AS IDENTITY NOT NULL,
   profile_id uuid NOT NULL,
@@ -72,7 +43,6 @@ CREATE TABLE public.tasks (
   CONSTRAINT tasks_external_id_unique UNIQUE (profile_id, external_id)
 );
 
--- 4. Pomodoro Sessions Table
 CREATE TABLE public.pomodoro_sessions (
   id bigint GENERATED ALWAYS AS IDENTITY NOT NULL,
   profile_id uuid NOT NULL,
@@ -87,35 +57,14 @@ CREATE TABLE public.pomodoro_sessions (
   CONSTRAINT pomodoro_sessions_profile_id_fkey FOREIGN KEY (profile_id) REFERENCES public.profiles(id) ON DELETE CASCADE
 );
 
--- 5. Row Level Security
+-- Enable Row Level Security (RLS)
 ALTER TABLE public.profiles ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.calendars ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.tasks ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.pomodoro_sessions ENABLE ROW LEVEL SECURITY;
 
+-- RLS Policies
 CREATE POLICY "Users can manage their own profile" ON public.profiles FOR ALL USING (auth.uid() = id);
 CREATE POLICY "Users can manage their own calendars" ON public.calendars FOR ALL USING (auth.uid() = profile_id);
 CREATE POLICY "Users can manage their own tasks" ON public.tasks FOR ALL USING (auth.uid() = profile_id);
 CREATE POLICY "Users can manage their own pomodoro sessions" ON public.pomodoro_sessions FOR ALL USING (auth.uid() = profile_id);
-
--- 7. Trigger for Auth Provisioning
-create or replace function public.handle_new_user()
-returns trigger
-language plpgsql
-security definer
-set search_path = public, auth, pg_temp
-as $$
-begin
-    insert into public.profiles (id)
-    values (new.id)
-    on conflict (id) do nothing;
-    return new;
-end;
-$$;
-
-revoke all on function public.handle_new_user() from public;
-grant execute on function public.handle_new_user() to supabase_auth_admin;
-
-create trigger on_auth_user_created
-    after insert on auth.users
-    for each row execute function public.handle_new_user();
