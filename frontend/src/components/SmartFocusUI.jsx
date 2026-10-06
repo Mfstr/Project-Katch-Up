@@ -1,6 +1,4 @@
 import {
-    useCallback,
-    useEffect,
     useState
 } from 'react';
 
@@ -9,10 +7,7 @@ import {
 } from '../services/api.js';
 
 import StartSessionButton from './StartSessionButton.jsx';
-
-function getTaskID(task) {
-    return task?.id ?? task?.taskID ?? null;
-}
+import TaskDisplay from './TaskDisplay.jsx';
 
 function getTaskTitle(task) {
     return task?.title ?? task?.name ?? 'Next Task';
@@ -36,8 +31,7 @@ export default function SmartFocusUI() {
             if (!nextTask) {
                 throw new Error('Next task was not returned from the server.');
             }
-            
-            const taskID = getTaskID(nextTask);
+
             setTask(nextTask);
             setActive(true);
             setMessage(`Session Started: ${getTaskTitle(nextTask)}`);
@@ -52,14 +46,31 @@ export default function SmartFocusUI() {
         }
     };
 
+    return (
+        <main className="smart-focus-ui">
+            <div className="smart-focus-session-button">
+                <StartSessionButton
+                    onClick={startSession}
+                    loading={isLoading}
+                    disabled={isActive}
+                />
+            </div>
 
-    <main className="smart-focus-ui">
-        <div className="smart-focus-session-button">
-            <StartSessionButton
-                onClick={startSession}
-                loading={isLoading}
-                disabled={isActive}
-            />
-        </div>
-    </main>
+            {error && (
+                <div className="smart-focus-error" role="alert">
+                    {error}
+                </div>
+            )}
+
+            {message && !error && (
+                <div className="smart-focus-message" role="status">
+                    {message}
+                </div>
+            )}
+
+            <div className="smart-focus-table-info">
+                <TaskDisplay task={task} />
+            </div>
+        </main>
+    );
 }
