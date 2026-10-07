@@ -36,9 +36,9 @@
     "eslint-config-prettier": "^10.1.8",
     "eslint-plugin-react": "^7.37.5",
     "globals": "^17.11.0",
-    "jest": "^30.5.1",
+    "jest": "^30.5.2",
     "prettier": "^3.9.6",
-    "ts-jest": "^29.4.12",
+    "ts-jest": "^29.4.14",
     "typescript": "^6.0.2",
     "typescript-eslint": "^8.68.0"
   },
@@ -48,5 +48,9 @@
     "express": "^5.2.1",
     "node-ical": "^0.27.1",
     "pg": "^8.23.0"
+  },
+  "overrides": {
+    "js-yaml": "^4.1.0",
+    "proxy-addr": "^2.0.8"
   }
 }
