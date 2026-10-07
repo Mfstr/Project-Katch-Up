@@ -48,5 +48,9 @@
     "express": "^5.2.1",
     "node-ical": "^0.27.1",
     "pg": "^8.23.0"
+  },
+  "overrides": {
+    "js-yaml": "^4.1.0",
+    "proxy-addr": "^2.0.8"
   }
 }
