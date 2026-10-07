@@ -70,6 +70,7 @@ export default defineConfig([
       'react/react-in-jsx-scope': 'off',
       'react/jsx-uses-react': 'off',
       'react/jsx-uses-vars': 'off',
+      'no-unused-vars': 'off',
     },
   },
 
