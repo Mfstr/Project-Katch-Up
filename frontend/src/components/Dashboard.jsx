@@ -1,4 +1,4 @@
-export default function TaskDisplay({ task }) {
+export default function Dashboard({ task }) {
     if (!task) {
         return (
             <article className="empty-task-display">
