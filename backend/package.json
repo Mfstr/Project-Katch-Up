@@ -1,5 +1,5 @@
 {
-  "name": "server",
+  "name": "backend",
   "version": "1.0.0",
   "type": "module",
   "description": "Project Katch-Up API server",
@@ -8,8 +8,7 @@
     "dev": "tsx watch src/index.ts",
     "build": "tsc",
     "start": "node dist/index.js",
-    "typecheck": "tsc --noEmit",
-    "supabase:gen": "npx supabase gen types typescript --project-id <your-project-id> > src/types/supabase.ts"
+    "typecheck": "tsc --noEmit"
   },
   "keywords": [],
   "author": "",
