@@ -43,6 +43,17 @@ export async function apiClient(path, options = {}) {
     return body;
 }
 
+function normalizeTasks(payload) {
+    if (Array.isArray(payload)) return payload;
+    if (Array.isArray(payload?.tasks)) return payload.tasks;
+    if (Array.isArray(payload?.data)) return payload.data;
+    return [];
+}
+
+export async function getTasks() {
+    return normalizeTasks(await apiClient('/api/tasks'));
+}
+
 export async function getNextTask() {
     return apiClient('/api/tasks/next');
 }

@@ -13,6 +13,22 @@ function getTaskTitle(task) {
     return task?.title ?? task?.name ?? 'Next Task';
 }
 
+function normalizeTasks(payload) {
+    const task = payload?.task ?? payload?.data ?? payload;
+
+    if (!task || typeof task !== 'object') {
+        throw new Error('The next-task response did not contain a task.');
+    }
+
+    return {
+        id: task.id ?? task.taskId,
+        title: task.title ?? task.name ?? 'Untitled task',
+        description: task.description ?? '',
+        dueDate: task.dueDate ?? task.due_date ?? null,
+        isComplete: Boolean(task.isComplete ?? task.is_complete),
+    };
+}
+
 export default function SmartFocusUI() {
     const [task, setTask] = useState(null);
     const [isActive, setActive] = useState(false);
@@ -26,15 +42,11 @@ export default function SmartFocusUI() {
         setError('');
 
         try {
-            const nextTask = await getNextTask();
-
-            if (!nextTask) {
-                throw new Error('Next task was not returned from the server.');
-            }
-
+            const nextTask = normalizeTasks(await getNextTask());
             setTask(nextTask);
+
             setActive(true);
-            setMessage(`Session Started: ${getTaskTitle(nextTask)}`);
+            setMessage(`Session Started: ${nextTask.title}`);
         } catch (requestError) {
             setError(
                 requestError instanceof Error
@@ -46,8 +58,19 @@ export default function SmartFocusUI() {
         }
     };
 
+    const handleSelectTask = (selectedTask) => {
+        setTask(selectedTask);
+        setMessage('');
+        setError('');
+    };
+
     return (
         <main className="smart-focus-ui">
+            <Dashboard
+                selectedTask={task}
+                onSelectTask={handleSelectTask}
+            />
+            
             <div className="smart-focus-session-button">
                 <StartSessionButton
                     onClick={startSession}
