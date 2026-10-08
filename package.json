@@ -5,7 +5,7 @@
   "main": "index.js",
   "type": "module",
   "directories": {
-    "test": "tests"
+    "test": "backend/tests"
   },
   "scripts": {
     "test": "node --experimental-vm-modules node_modules/jest/bin/jest.js",
@@ -36,9 +36,9 @@
     "eslint-config-prettier": "^10.1.8",
     "eslint-plugin-react": "^7.37.5",
     "globals": "^17.11.0",
-    "jest": "^30.5.1",
+    "jest": "^30.5.2",
     "prettier": "^3.9.6",
-    "ts-jest": "^29.4.12",
+    "ts-jest": "^29.4.14",
     "typescript": "^6.0.2",
     "typescript-eslint": "^8.68.0"
   },
