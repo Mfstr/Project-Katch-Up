@@ -43,7 +43,7 @@ export async function apiClient(path, options = {}) {
     return body;
 }
 
-export async function getNext() {
+export async function getNextTask() {
     return apiClient('/api/tasks/next');
 }
 
