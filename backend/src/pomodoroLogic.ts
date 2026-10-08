@@ -17,6 +17,7 @@ export interface TimerStatus {
 }
 
 
+
 export class PomodoroTimer {
     private endTime: number | null = null;
     private isActive: boolean = false;
