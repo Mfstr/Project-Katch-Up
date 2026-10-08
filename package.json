@@ -55,6 +55,5 @@
   "overrides": {
     "js-yaml": "^4.1.0",
     "proxy-addr": "^2.0.8"
-    
   }
 }
