@@ -26,7 +26,7 @@ async function request(path, options = {}) {
     return body;
 }
 
-export async function getNext() {
+export async function getNextTask() {
     return request('/api/tasks/next');
 }
 
