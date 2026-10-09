@@ -69,6 +69,10 @@ export async function pauseTimer() {
     return apiClient('/api/timer/pause', { method: 'POST'});
 }
 
+export async function stopTimer() {
+    return apiClient('/api/timer/stop', { method: 'POST'});
+}
+
 export async function resetTimer() {
     return apiClient('/api/timer/reset', { method: 'POST'});
 }
