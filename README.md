@@ -30,6 +30,7 @@
 ### Prerequisites
 * [Node.js](https://nodejs.org/) (v20 LTS or later)
 * [Docker Desktop](https://www.docker.com/products/docker-desktop/) (v24.0+)
+* [Supabase CLI](https://supabase.com/docs/guides/cli/getting-started) (Installed globally or via npx)
 
 ### Single-Command Launch (Recommended)
 
@@ -43,60 +44,68 @@
    ```bash
    cp .env.example .env
    ```
+   *Note: Update the `.env` with the URL and Anon Key provided by the Supabase CLI in the next step.*
 
-3. **Start the database via Docker:**
+3. **Start the Local Supabase Environment (Database, API, Auth):**
    ```bash
-   cd docker
-   docker compose up -d db
+   npx supabase start
+   ```
+   *(This automatically spins up the Supabase stack in Docker and seeds dummy data into your local database).*
+
+4. **Start the Backend Server:**
+   ```bash
+   cd backend
+   npm install
+   npm run dev
    ```
 
-4. **Access the application:**
-   * **Web Client:** `http://localhost:3000`
-   * **API Gateway / Health Check:** `http://localhost:4000/api/health`
+5. **Start the Frontend Client:**
+   Open a new terminal window:
+   ```bash
+   cd frontend
+   npm install
+   npm run dev
+   ```
 
----
+6. **Access the application:**
+   * **Web Client:** `http://localhost:5173`
+   * **Local Backend API:** `http://localhost:5050`
+   * **Local Supabase Studio:** `http://localhost:54323` (Manage your local DB & users here)
 
-## Testing Endpoints Locally
+### Testing Endpoints Locally
 
-If you'd like to test the raw API endpoints locally (outside of Docker), start the basic Express server using:
-
-```bash
-node index.js
-```
-
-The server will run on port `3000` by default.
-
-### Timer Routes
+### Timer Routes (Requires Auth Token)
 
 **Start Timer**
 ```bash
-curl -X POST http://localhost:3000/timer/start \
-  -H "Content-Type: application/json" \
-  -d '{"taskId": "123", "durationSeconds": 1500}'
+curl -X POST http://localhost:5050/api/timer/start \
+  -H "Authorization: Bearer <token>"
 ```
 
 **Pause Timer**
 ```bash
-curl -X POST http://localhost:3000/timer/pause
+curl -X POST http://localhost:5050/api/timer/pause \
+  -H "Authorization: Bearer <token>"
 ```
 
-**Stop Timer**
+**Stop/Complete Timer**
 ```bash
-curl -X POST http://localhost:3000/timer/stop
+curl -X POST http://localhost:5050/api/timer/complete \
+  -H "Authorization: Bearer <token>"
 ```
 
 **Reset Timer**
 ```bash
-curl -X POST http://localhost:3000/timer/reset
+curl -X POST http://localhost:5050/api/timer/reset \
+  -H "Authorization: Bearer <token>"
 ```
 
-### Calendar Routes
+### Calendar Routes (Requires Auth Token)
 
 **Sync Calendar**
 ```bash
-curl -X POST http://localhost:3000/calendar/sync \
-  -H "Content-Type: application/json" \
-  -d '{"url": "https://example.com/calendar.ics"}'
+curl -X POST http://localhost:5050/api/calendars/123/sync \
+  -H "Authorization: Bearer <token>"
 ```
 
 ---
@@ -107,7 +116,9 @@ Copy `.env.example` to `.env` in the root directory before running the applicati
 
 | Variable Name | Type | Default Value | Description |
 | --- | --- | --- | --- |
-| `DATABASE_URL` | String | `postgresql://postgres:postgres@db:5432/katchup_dev` | PostgreSQL connection string |
+| `SUPABASE_URL` | String | `http://127.0.0.1:54321` | The REST API URL of your Supabase project |
+| `SUPABASE_ANON_KEY` | String | `your_local_anon_key` | The anonymous publishable key |
+| `PORT` | Number | `5050` | The backend Express server port |
 
 ---
 

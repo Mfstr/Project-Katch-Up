@@ -63,6 +63,7 @@ export default function Authorize() {
                     name="email"
                     type="email"
                     autoComplete="email"
+                    defaultValue="alex@example.com"
                     required
                 />
 
@@ -72,6 +73,7 @@ export default function Authorize() {
                     name="password"
                     type="password"
                     autoComplete={isRegister ? 'new-password' : 'current-password'}
+                    defaultValue="password123"
                     required
                 />
 
