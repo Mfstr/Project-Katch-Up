@@ -1,11 +1,15 @@
-import { createDefaultPreset } from 'ts-jest';
+import { createDefaultEsmPreset } from 'ts-jest';
 
-const tsJestTransformCfg = createDefaultPreset().transform;
+const tsJestEsmPreset = createDefaultEsmPreset({
+  tsconfig: './backend/tsconfig.json',
+});
 
-/** @type {import("jest").Config} **/
+/** @type {import('jest').Config} */
 export default {
+  ...tsJestEsmPreset,
   testEnvironment: 'node',
-  transform: {
-    ...tsJestTransformCfg,
+  moduleNameMapper: {
+    '^(\\.{1,2}/.*)\\.js$': '$1',
   },
+  setupFiles: ['./backend/tests/jest.setup.js'],
 };
