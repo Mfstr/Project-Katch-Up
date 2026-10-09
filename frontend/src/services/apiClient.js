@@ -43,16 +43,34 @@ export async function apiClient(path, options = {}) {
     return body;
 }
 
+function normalizeTasks(payload) {
+    if (Array.isArray(payload)) return payload;
+    if (Array.isArray(payload?.tasks)) return payload.tasks;
+    if (Array.isArray(payload?.data)) return payload.data;
+    return [];
+}
+
+export async function getTasks() {
+    return normalizeTasks(await apiClient('/api/tasks'));
+}
+
 export async function getNextTask() {
     return apiClient('/api/tasks/next');
 }
 
-export async function startTimer() {
-    return apiClient('/api/timer/start', { method: 'POST'});
+export async function startTimer({ taskId, durationSeconds } = {}) {
+    return apiClient('/api/timer/start', {
+        method: 'POST',
+        body: JSON.stringify({ taskId, durationSeconds }),
+    });
 }
 
 export async function pauseTimer() {
     return apiClient('/api/timer/pause', { method: 'POST'});
+}
+
+export async function stopTimer() {
+    return apiClient('/api/timer/stop', { method: 'POST'});
 }
 
 export async function resetTimer() {
