@@ -54,7 +54,6 @@ export default function Dashboard({ selectedTask, onSelectTask }) {
                     <h1 id="dashboard-heading">Your Tasks</h1>
                 </div>
 
-                // When I have more time, I can probably make this its own component.
                 <button
                     type="button"
                     className="refresh-tasks"
