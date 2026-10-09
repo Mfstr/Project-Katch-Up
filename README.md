@@ -172,3 +172,8 @@ git commit -m "chore(deps): bump pg driver to v8.11.0"
 ## License
 
 Distributed under the MIT License. See `LICENSE` for more information.
+## System Architecture
+
+To understand the high-level system architecture, you can refer to the following diagrams:
+- [Database Entity-Relationship Diagram (ERD)](docs/architecture/database-erd.png) - Represents the Supabase database schema (`profiles`, `tasks`, `calendar`, `pomodoro_sessions`).
+- [UML Component Data Flow Diagram](docs/architecture/component-diagram.png) - Illustrates the interaction and data flow between the React frontend, Express API Server backend, and Supabase.
