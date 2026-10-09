@@ -23,16 +23,16 @@
         <div class='clearfix'>
             
             <div class='fl pad1y space-right2'>
-                <span class="strong">89.74% </span>
+                <span class="strong">89.47% </span>
                 <span class="quiet">Statements</span>
-                <span class='fraction'>35/39</span>
+                <span class='fraction'>34/38</span>
             </div>
         
             
             <div class='fl pad1y space-right2'>
-                <span class="strong">75.75% </span>
+                <span class="strong">68% </span>
                 <span class="quiet">Branches</span>
-                <span class='fraction'>25/33</span>
+                <span class='fraction'>17/25</span>
             </div>
         
             
@@ -44,9 +44,9 @@
         
             
             <div class='fl pad1y space-right2'>
-                <span class="strong">89.74% </span>
+                <span class="strong">89.47% </span>
                 <span class="quiet">Lines</span>
-                <span class='fraction'>35/39</span>
+                <span class='fraction'>34/38</span>
             </div>
         
             
@@ -170,11 +170,7 @@
 <a name='L105'></a><a href='#L105'>105</a>
 <a name='L106'></a><a href='#L106'>106</a>
 <a name='L107'></a><a href='#L107'>107</a>
-<a name='L108'></a><a href='#L108'>108</a>
-<a name='L109'></a><a href='#L109'>109</a>
-<a name='L110'></a><a href='#L110'>110</a>
-<a name='L111'></a><a href='#L111'>111</a>
-<a name='L112'></a><a href='#L112'>112</a></td><td class="line-coverage quiet"><span class="cline-any cline-neutral">&nbsp;</span>
+<a name='L108'></a><a href='#L108'>108</a></td><td class="line-coverage quiet"><span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
@@ -193,8 +189,6 @@
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-yes">1x</span>
 <span class="cline-any cline-yes">6x</span>
 <span class="cline-any cline-yes">6x</span>
 <span class="cline-any cline-yes">6x</span>
@@ -244,8 +238,6 @@
 <span class="cline-any cline-yes">9x</span>
 <span class="cline-any cline-yes">6x</span>
 <span class="cline-any cline-yes">6x</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-yes">3x</span>
@@ -288,113 +280,109 @@
 <span class="cline-any cline-neutral">&nbsp;</span></td><td class="text"><pre class="prettyprint lang-js">export type TimerPhase = 'FOCUS' | 'SHORT_BREAK' | 'LONG_BREAK';
 &nbsp;
 export interface TimerConfig {
-    focusMinutes?: number;
-    shortBreakMinutes?: number;
-    longBreakMinutes?: number;
-    sessionsUntilLongBreak?: number;
+  focusMinutes?: number;
+  shortBreakMinutes?: number;
+  longBreakMinutes?: number;
+  sessionsUntilLongBreak?: number;
 }
 &nbsp;
 export interface TimerStatus {
-    phase: TimerPhase;
-    remainingSeconds: number;
-    isActive: boolean;
-    endTime: number | null;
-    pomodoroCount: number;
-    sessionsUntilLongBreak: number;
+  phase: TimerPhase;
+  remainingSeconds: number;
+  isActive: boolean;
+  endTime: number | null;
+  pomodoroCount: number;
+  sessionsUntilLongBreak: number;
 }
 &nbsp;
-&nbsp;
-&nbsp;
 export class PomodoroTimer {
-    private endTime: number | null = null;
-    private isActive: boolean = false;
-    private currentPhase: TimerPhase = 'FOCUS';
-    private pomodoroCount: number = 0;
-    private remainingMs: number;
+  private endTime: number | null = null;
+  private isActive: boolean = false;
+  private currentPhase: TimerPhase = 'FOCUS';
+  private pomodoroCount: number = 0;
+  private remainingMs: number;
 &nbsp;
-    private readonly phaseDurations: Record&lt;TimerPhase, number&gt;;
-    private readonly sessionsUntilLongBreak: number;
+  private readonly phaseDurations: Record&lt;TimerPhase, number&gt;;
+  private readonly sessionsUntilLongBreak: number;
 &nbsp;
-    constructor(config: TimerConfig = <span class="branch-0 cbranch-no" title="branch not covered" >{})</span> {
-        this.sessionsUntilLongBreak = config.sessionsUntilLongBreak ?? <span class="branch-1 cbranch-no" title="branch not covered" >4;</span>
-        this.phaseDurations = {
-            FOCUS: (config.focusMinutes ?? <span class="branch-1 cbranch-no" title="branch not covered" >25)</span> * 60 * 1000,
-            SHORT_BREAK: (config.shortBreakMinutes ?? <span class="branch-1 cbranch-no" title="branch not covered" >5)</span> * 60 * 1000,
-            LONG_BREAK: (config.longBreakMinutes ?? <span class="branch-1 cbranch-no" title="branch not covered" >15)</span> * 60 * 1000,
-        };
-        this.remainingMs = this.phaseDurations.FOCUS;
+  constructor(config: TimerConfig = <span class="branch-0 cbranch-no" title="branch not covered" >{})</span> {
+    this.sessionsUntilLongBreak = config.sessionsUntilLongBreak ?? <span class="branch-1 cbranch-no" title="branch not covered" >4;</span>
+    this.phaseDurations = {
+      FOCUS: (config.focusMinutes ?? <span class="branch-1 cbranch-no" title="branch not covered" >25)</span> * 60 * 1000,
+      SHORT_BREAK: (config.shortBreakMinutes ?? <span class="branch-1 cbranch-no" title="branch not covered" >5)</span> * 60 * 1000,
+      LONG_BREAK: (config.longBreakMinutes ?? <span class="branch-1 cbranch-no" title="branch not covered" >15)</span> * 60 * 1000,
+    };
+    this.remainingMs = this.phaseDurations.FOCUS;
+  }
+&nbsp;
+  public start(): number | null {
+    <span class="missing-if-branch" title="else path not taken" >E</span>if (!this.isActive) {
+      this.endTime = Date.now() + this.remainingMs;
+      this.isActive = true;
+    }
+    return this.endTime;
+  }
+&nbsp;
+  public pause(): number | null {
+    <span class="missing-if-branch" title="else path not taken" >E</span>if (this.isActive &amp;&amp; this.endTime !== null) {
+      this.remainingMs = Math.max(0, this.endTime - Date.now());
+      this.endTime = null;
+      this.isActive = false;
+      return Math.floor(this.remainingMs / 1000);
+    }
+<span class="cstat-no" title="statement not covered" >    return null;</span>
+  }
+&nbsp;
+  /**
+   * Called when a phase naturally completes. Advances to the next phase and
+   * increments the pomodoro count after each FOCUS session.
+   * Returns the new phase so callers can notify clients.
+   */
+  public complete(): TimerPhase {
+    this.isActive = false;
+    this.endTime = null;
+&nbsp;
+    if (this.currentPhase === 'FOCUS') {
+      this.pomodoroCount += 1;
+      this.currentPhase =
+        this.pomodoroCount % this.sessionsUntilLongBreak === 0 ? 'LONG_BREAK' : 'SHORT_BREAK';
+    } else {
+      this.currentPhase = 'FOCUS';
     }
 &nbsp;
-    public start(): number | null {
-        <span class="missing-if-branch" title="else path not taken" >E</span>if (!this.isActive) {
-            this.endTime = Date.now() + this.remainingMs;
-            this.isActive = true;
-        }
-        return this.endTime;
+    this.remainingMs = this.phaseDurations[this.currentPhase];
+    return this.currentPhase;
+  }
+&nbsp;
+  public getStatus(): TimerStatus {
+    let remaining = this.remainingMs;
+&nbsp;
+    if (this.isActive &amp;&amp; this.endTime !== null) {
+      remaining = Math.max(0, this.endTime - Date.now());
+      <span class="missing-if-branch" title="if path not taken" >I</span>if (remaining === 0) {
+<span class="cstat-no" title="statement not covered" >        this.isActive = false;</span>
+<span class="cstat-no" title="statement not covered" >        this.endTime = null;</span>
+<span class="cstat-no" title="statement not covered" >        this.remainingMs = 0;</span>
+      }
     }
 &nbsp;
-    public pause(): number | null {
-        <span class="missing-if-branch" title="else path not taken" >E</span>if (this.isActive &amp;&amp; this.endTime !== null) {
-            this.remainingMs = Math.max(0, this.endTime - Date.now());
-            this.endTime = null;
-            this.isActive = false;
-            return Math.floor(this.remainingMs / 1000);
-        }
-<span class="cstat-no" title="statement not covered" >        return null;</span>
-    }
+    return {
+      phase: this.currentPhase,
+      remainingSeconds: Math.floor(remaining / 1000),
+      isActive: this.isActive,
+      endTime: this.endTime,
+      pomodoroCount: this.pomodoroCount,
+      sessionsUntilLongBreak: this.sessionsUntilLongBreak,
+    };
+  }
 &nbsp;
-    /**
-     * Called when a phase naturally completes. Advances to the next phase and
-     * increments the pomodoro count after each FOCUS session.
-     * Returns the new phase so callers can notify clients.
-     */
-    public complete(): TimerPhase {
-        this.isActive = false;
-        this.endTime = null;
-&nbsp;
-        if (this.currentPhase === 'FOCUS') {
-            this.pomodoroCount += 1;
-            this.currentPhase =
-                this.pomodoroCount % this.sessionsUntilLongBreak === 0
-                    ? 'LONG_BREAK'
-                    : 'SHORT_BREAK';
-        } else {
-            this.currentPhase = 'FOCUS';
-        }
-&nbsp;
-        this.remainingMs = this.phaseDurations[this.currentPhase];
-        return this.currentPhase;
-    }
-&nbsp;
-    public getStatus(): TimerStatus {
-        let remaining = this.remainingMs;
-&nbsp;
-        if (this.isActive &amp;&amp; this.endTime !== null) {
-            remaining = Math.max(0, this.endTime - Date.now());
-            <span class="missing-if-branch" title="if path not taken" >I</span>if (remaining === 0) {
-<span class="cstat-no" title="statement not covered" >                this.isActive = false;</span>
-<span class="cstat-no" title="statement not covered" >                this.endTime = null;</span>
-<span class="cstat-no" title="statement not covered" >                this.remainingMs = 0;</span>
-            }
-        }
-&nbsp;
-        return {
-            phase: this.currentPhase,
-            remainingSeconds: Math.floor(remaining / 1000),
-            isActive: this.isActive,
-            endTime: this.endTime,
-            pomodoroCount: this.pomodoroCount,
-            sessionsUntilLongBreak: this.sessionsUntilLongBreak,
-        };
-    }
-&nbsp;
-    public reset(): void {
-        this.endTime = null;
-        this.isActive = false;
-        this.currentPhase = 'FOCUS';
-        this.pomodoroCount = 0;
-        this.remainingMs = this.phaseDurations.FOCUS;
-    }
+  public reset(): void {
+    this.endTime = null;
+    this.isActive = false;
+    this.currentPhase = 'FOCUS';
+    this.pomodoroCount = 0;
+    this.remainingMs = this.phaseDurations.FOCUS;
+  }
 }
 &nbsp;</pre></td></tr></table></pre>
 
@@ -403,7 +391,7 @@ export class PomodoroTimer {
             <div class='footer quiet pad2 space-top1 center small'>
                 Code coverage generated by
                 <a href="https://istanbul.js.org/" target="_blank" rel="noopener noreferrer">istanbul</a>
-                at 2026-10-08T03:36:33.152Z
+                at 2026-10-09T01:44:49.250Z
             </div>
         <script src="prettify.js"></script>
         <script>
