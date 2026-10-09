@@ -4,10 +4,10 @@ import {
 
 import {
     getNextTask,
-} from '../services/api.js';
+} from '../services/apiClient.js';
 
 import StartSessionButton from './StartSessionButton.jsx';
-import TaskDisplay from './TaskDisplay.jsx';
+import Dashboard from './Dashboard.jsx';
 
 function getTaskTitle(task) {
     return task?.title ?? task?.name ?? 'Next Task';
@@ -69,7 +69,7 @@ export default function SmartFocusUI() {
             )}
 
             <div className="smart-focus-table-info">
-                <TaskDisplay task={task} />
+                <Dashboard task={task} />
             </div>
         </main>
     );
