@@ -70,7 +70,7 @@ export async function pauseTimer() {
 }
 
 export async function stopTimer() {
-    return apiClient('/api/timer/stop', { method: 'POST'});
+    return apiClient('/api/timer/complete', { method: 'POST'});
 }
 
 export async function resetTimer() {

@@ -6,7 +6,7 @@ import rateLimit from 'express-rate-limit';
 import type { Request, Response } from 'express';
 import { PomodoroTimer } from './pomodoroLogic.js';
 import { addCalendar, listCalendars, deleteCalendar, syncCalendarById } from './calendarService.js';
-import { softDeleteTask, getNextTask } from './taskService.js';
+import { softDeleteTask, getNextTask, getAllTasks } from './taskService.js';
 import { registerUser, loginUser } from './authService.js';
 import { verifyToken } from './verifyToken.js';
 
@@ -96,6 +96,16 @@ app.post('/api/calendars/:id/sync', async (req: Request, res: Response) => {
 // Task Management Routes
 // ---------------------------------------------------------------------------
 app.use('/api/tasks', verifyToken);
+
+app.get('/api/tasks', async (req: Request, res: Response) => {
+  try {
+    const profileId = req.user!.id;
+    const tasks = await getAllTasks(profileId);
+    res.json(tasks);
+  } catch (err: unknown) {
+    res.status(500).json({ error: err instanceof Error ? err.message : String(err) });
+  }
+});
 
 app.get('/api/tasks/next', async (req: Request, res: Response) => {
   try {

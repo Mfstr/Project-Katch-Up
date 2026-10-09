@@ -20,6 +20,7 @@ jest.unstable_mockModule('../../src/calendarService.js', () => ({
 jest.unstable_mockModule('../../src/taskService.js', () => ({
     softDeleteTask: jest.fn().mockResolvedValue(undefined),
     getNextTask: jest.fn().mockResolvedValue({ id: 1, title: 'Next Task' }),
+    getAllTasks: jest.fn().mockResolvedValue([]),
 }));
 
 jest.unstable_mockModule('../../src/authService.js', () => ({

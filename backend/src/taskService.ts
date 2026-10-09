@@ -33,3 +33,25 @@ export const getNextTask = async (profileId: string) => {
     isComplete: data.is_complete,
   } : null;
 };
+
+
+export const getAllTasks = async (profileId: string) => {
+  const { data, error } = await supabase
+    .from('tasks')
+    .select('*')
+    .eq('profile_id', profileId)
+    .is('deleted_at', null)
+    .order('due_date', { ascending: true, nullsFirst: false });
+
+  if (error) {
+    throw new Error(`Failed to get tasks: ${error.message}`);
+  }
+
+  return (data || []).map(task => ({
+    id: task.id,
+    title: task.title,
+    description: task.description,
+    dueDate: task.due_date,
+    isComplete: task.is_complete,
+  }));
+};
