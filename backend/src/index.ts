@@ -11,6 +11,7 @@ import {
 } from './calendarService.js';
 import { softDeleteTask } from './taskService.js';
 import { registerUser, loginUser } from './authService.js';
+import { verifyToken } from './verifyToken.js';
 
 const app = express();
 app.use(cors());
@@ -21,6 +22,7 @@ const timer = new PomodoroTimer();
 // ---------------------------------------------------------------------------
 // Pomodoro Timer Routes
 // ---------------------------------------------------------------------------
+app.use('/api/timer', verifyToken);
 
 app.post('/api/timer/start', (_req: Request, res: Response) => {
     const endTime = timer.start();
@@ -49,6 +51,7 @@ app.get('/api/timer/status', (_req: Request, res: Response) => {
 // ---------------------------------------------------------------------------
 // Calendar Management Routes
 // ---------------------------------------------------------------------------
+app.use('/api/calendars', verifyToken);
 
 app.get('/api/calendars', async (_req: Request, res: Response) => {
     try {
@@ -94,6 +97,7 @@ app.post('/api/calendars/:id/sync', async (req: Request, res: Response) => {
 // ---------------------------------------------------------------------------
 // Task Management Routes
 // ---------------------------------------------------------------------------
+app.use('/api/tasks', verifyToken);
 
 app.delete('/api/tasks/:id', async (req: Request, res: Response) => {
     try {
