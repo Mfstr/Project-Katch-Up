@@ -30,3 +30,4 @@ ehthumbs.db
 npm-debug.log*
 yarn-debug.log*
 yarn-error.log*
+supabase/.temp/start-secrets/supabase_edge_runtime_Project-Katch-Up/env/docker.env

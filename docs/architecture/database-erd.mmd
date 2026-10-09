@@ -1,0 +1,51 @@
+erDiagram
+    auth_users ||--o| PROFILES : "has one"
+    PROFILES ||--o{ TASKS : "has many"
+    PROFILES ||--o{ POMODORO_SESSIONS : "has many"
+    CALENDAR |o--o| PROFILES : "links to"
+    TASKS ||--o{ POMODORO_SESSIONS : "has many"
+
+    auth_users {
+        uuid id PK
+    }
+    
+    PROFILES {
+        uuid id PK "FK to auth.users"
+        timestamp created_at
+        timestamp deleted_at
+        text ical_url FK "FK to calendar.ical_url"
+        integer focus_interval
+        integer break_interval
+        integer pomodoro_cycles
+    }
+
+    TASKS {
+        bigint id PK
+        timestamp created_at
+        timestamp deleted_at
+        text title
+        text description
+        boolean is_complete
+        timestamp due_date
+        uuid profile_id FK
+    }
+
+    CALENDAR {
+        bigint id PK
+        timestamp created_at
+        timestamp deleted_at
+        text name
+        text description
+        text ical_url UK
+    }
+
+    POMODORO_SESSIONS {
+        uuid id PK
+        uuid profile_id FK
+        bigint task_id FK
+        varchar session_type
+        integer planned_duraton_seconds
+        integer actual_duration_seconds
+        boolean was_interrupted
+        timestamp created_at
+    }

@@ -1,0 +1,23 @@
+flowchart TD
+    subgraph Frontend [React Application]
+        UI[User Interface]
+        API_Client[API Client]
+    end
+
+    subgraph Backend [Express API Server]
+        Routes[Express Routes]
+        Controllers[Controllers]
+        Services[Business Logic / Services]
+    end
+
+    subgraph Database [Supabase]
+        PostgreSQL[(PostgreSQL DB)]
+        Auth[Supabase Auth]
+    end
+
+    UI -->|User Actions| API_Client
+    API_Client -->|HTTP Requests| Routes
+    Routes --> Controllers
+    Controllers --> Services
+    Services -->|Supabase Client / SQL| PostgreSQL
+    API_Client -->|Authentication| Auth
