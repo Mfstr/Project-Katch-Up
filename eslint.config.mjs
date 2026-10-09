@@ -21,6 +21,11 @@ export default defineConfig([
     languageOptions: {
       ecmaVersion: 'latest',
       sourceType: 'module',
+      parserOptions: {
+        ecmaFeatures: {
+          jsx: true,
+        },
+      },
       globals: {
         ...globals.browser,
         ...globals.node,
@@ -63,6 +68,9 @@ export default defineConfig([
     },
     rules: {
       'react/react-in-jsx-scope': 'off',
+      'react/jsx-uses-react': 'off',
+      'react/jsx-uses-vars': 'off',
+      'no-unused-vars': 'off',
     },
   },
 

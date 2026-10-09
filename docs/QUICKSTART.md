@@ -5,14 +5,14 @@ This guide covers how to quickly start the server locally and test its endpoints
 ## Startup Instructions
 
 1. **Install Dependencies**
-   Navigate to the `server` directory and install the necessary packages:
+   Navigate to the `backend` directory and install the necessary packages:
    ```bash
-   cd server
+   cd backend
    npm install
    ```
 
 2. **Environment Setup**
-   Copy the example environment file from the root directory into the `server` directory and fill in your Supabase credentials:
+   Copy the example environment file from the root directory into the `backend` directory and fill in your Supabase credentials:
    ```bash
    cp ../.env.example .env
    ```
