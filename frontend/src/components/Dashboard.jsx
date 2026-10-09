@@ -8,6 +8,7 @@ function normalizeTasks(task) {
         description: task?.description ?? '',
         dueDate: task?.dueDate ?? task?.due_date ?? null,
         isComplete: Boolean(task?.isComplete ?? task?.is_complete ?? false),
+        durationSeconds: task?.durationSeconds ?? task?.duration_seconds ?? 20 * 60,
     }
 }
 

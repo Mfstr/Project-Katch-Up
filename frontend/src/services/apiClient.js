@@ -58,8 +58,11 @@ export async function getNextTask() {
     return apiClient('/api/tasks/next');
 }
 
-export async function startTimer() {
-    return apiClient('/api/timer/start', { method: 'POST'});
+export async function startTimer({ taskId, durationSeconds } = {}) {
+    return apiClient('/api/timer/start', {
+        method: 'POST',
+        body: JSON.stringify({ taskId, durationSeconds }),
+    });
 }
 
 export async function pauseTimer() {
