@@ -6,7 +6,7 @@ import rateLimit from 'express-rate-limit';
 import type { Request, Response } from 'express';
 import { PomodoroTimer } from './pomodoroLogic.js';
 import { addCalendar, listCalendars, deleteCalendar, syncCalendarById } from './calendarService.js';
-import { softDeleteTask } from './taskService.js';
+import { softDeleteTask, getNextTask } from './taskService.js';
 import { registerUser, loginUser } from './authService.js';
 import { verifyToken } from './verifyToken.js';
 
@@ -96,6 +96,22 @@ app.post('/api/calendars/:id/sync', async (req: Request, res: Response) => {
 // Task Management Routes
 // ---------------------------------------------------------------------------
 app.use('/api/tasks', verifyToken);
+
+app.get('/api/tasks/next', async (req: Request, res: Response) => {
+  try {
+    const profileId = req.user!.id;
+    const task = await getNextTask(profileId);
+    
+    if (!task) {
+      res.status(404).json({ error: 'No upcoming tasks found.' });
+      return;
+    }
+    
+    res.json(task);
+  } catch (err: unknown) {
+    res.status(500).json({ error: err instanceof Error ? err.message : String(err) });
+  }
+});
 
 app.delete('/api/tasks/:id', async (req: Request, res: Response) => {
   try {
