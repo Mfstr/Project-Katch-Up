@@ -1,0 +1,23 @@
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Outfit:wght@400;500;600;700;800&display=swap');
+
+:root {
+    font-family: 'Inter', sans-serif;
+    color: var(--page-bg);
+    background-color: var(--page-bg);
+    font-synthesis: none;
+    text-rendering: optimizeLegibility;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+    --font-heading: 'Outfit', 'Inter', sans-serif;
+    --font-body: 'Inter', sans-serif;
+    --primary-color: #635bdb;
+    --primary-soft: #eeedff;
+    --secondary-color: #f59e0b;
+    --page-bg: #f5f7fb;
+    --surface-color: #ffffff;
+    --surface-muted: #f8f9fd;
+    --text-primary: #20243a;
+    --border-color: #e4e8f1;
+    --danger-color: #d6455d;
+    --success-color: #16845d;
+}
