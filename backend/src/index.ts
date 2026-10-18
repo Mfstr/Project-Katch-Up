@@ -6,7 +6,7 @@ import rateLimit from 'express-rate-limit';
 import type { Request, Response } from 'express';
 import { PomodoroTimer } from './pomodoroLogic.js';
 import { addCalendar, listCalendars, deleteCalendar, syncCalendarById } from './calendarService.js';
-import { softDeleteTask, getNextTask, getAllTasks } from './taskService.js';
+import { softDeleteTask, getNextTask, getAllTasks, createTask, updateTask } from './taskService.js';
 import { registerUser, loginUser } from './authService.js';
 import { verifyToken } from './verifyToken.js';
 
@@ -109,14 +109,54 @@ app.get('/api/tasks', async (req: Request, res: Response) => {
 
 app.get('/api/tasks/next', async (req: Request, res: Response) => {
   try {
-    const profileId = req.user!.id;
+    const profileId = req.user?.id ?? '';
     const task = await getNextTask(profileId);
-    
+
     if (!task) {
       res.status(404).json({ error: 'No upcoming tasks found.' });
       return;
     }
-    
+
+    res.json(task);
+  } catch (err: unknown) {
+    res.status(500).json({ error: err instanceof Error ? err.message : String(err) });
+  }
+});
+
+app.post('/api/tasks', async (req: Request, res: Response) => {
+  const { title } = req.body ?? {};
+  if (!title || typeof title !== 'string' || !title.trim()) {
+    res.status(400).json({ error: 'title is required.' });
+    return;
+  }
+
+  try {
+    const profileId = req.user?.id;
+    const taskData = {
+      ...req.body,
+      profile_id: req.body?.profile_id ?? profileId,
+    };
+    const task = await createTask(taskData);
+    res.status(201).json(task);
+  } catch (err: unknown) {
+    res.status(500).json({ error: err instanceof Error ? err.message : String(err) });
+  }
+});
+
+app.put('/api/tasks/:id', async (req: Request, res: Response) => {
+  try {
+    const taskId = parseInt(req.params['id'] as string, 10);
+    if (isNaN(taskId)) {
+      res.status(400).json({ error: 'Invalid task ID' });
+      return;
+    }
+
+    const task = await updateTask(taskId, req.body ?? {});
+    if (!task) {
+      res.status(404).json({ error: 'Task not found' });
+      return;
+    }
+
     res.json(task);
   } catch (err: unknown) {
     res.status(500).json({ error: err instanceof Error ? err.message : String(err) });
