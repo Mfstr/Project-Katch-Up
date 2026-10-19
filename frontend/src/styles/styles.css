@@ -15,6 +15,7 @@
     --navigation-color: #E1AD01;
     --timer-color: #ff4545;
     --task-color: #438ee8;
+    --task-hover: #218B431A;
     --surface-color: #ffffff;
     --surface-muted: #fbfdfb;
     --glass-background: #ffffffb8;
@@ -48,6 +49,10 @@ button, input, textarea, select {
     font: inherit;
 }
 
+button, a, .task-card, .refresh-tasks, .timer-controls button, .start-session, .auth-page form button {
+    transition: all 0.2 ease;
+}
+
 .home-page {
     min-height: 100vh;
     padding: clamp(18px, 4vw, 48px);
@@ -79,7 +84,6 @@ button, input, textarea, select {
     box-shadow: var(--glass-shadow);
     -webkit-backdrop-filter: blur(14px);
     backdrop-filter: blur(14px);
-
 }
 
 .dashboard-header {
@@ -124,6 +128,23 @@ button, input, textarea, select {
     border: 1px solid var(--border-color);
     background: var(--surface-color);
     cursor: pointer;
+}
+
+.task-card:hover {
+    transform: translateY(-2px);
+    border-color: var(--primary-color);
+    background: var(--primary-soft);
+    box-shadow: 0 7px 18px var(--task-hover);
+}
+
+.task-card:active {
+    transform: translateY(0) scale(0.995);
+}
+
+.task-card.selected {
+    border-color: var(--primary-color);
+    background-color: var(--primary-soft);
+    box-shadow: inset 3px 0 0 var(--primary-soft);
 }
 
 .task-card-title {
@@ -247,6 +268,21 @@ button, input, textarea, select {
 .timer-reset {
     color: var(--surface-color);
     background: var(--task-color);
+}
+
+.timer-controls button:hover, .start-session:hover, .auth-page form button:hover {
+    transform: translateY(-2px) scale(1.02);
+    filter: brightness(0.94);
+    box-shadow: 0 6px 14px var(--glass-shadow);
+}
+
+.timer-controls button:active, .start-session:active, .auth-page form button:active {
+    transform: translateY(0) scale(0.98);
+}
+
+button:disabled {
+    cursor: not-allowed;
+    opacity: 0.65;
 }
 
 .smart-focus-session-button {
