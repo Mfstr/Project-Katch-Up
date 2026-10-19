@@ -17,6 +17,9 @@
     --task-color: #438ee8;
     --surface-color: #ffffff;
     --surface-muted: #fbfdfb;
+    --glass-background: #ffffffb8;
+    --glass-border: #ffffffd1;
+    --glass-shadow: 0 12px 32px #20202014;
     --text-primary: #202020;
     --text-secondary: #68716b;
     --border-color: #bfe6c8;
@@ -71,8 +74,12 @@ button, input, textarea, select {
     grid-area: tasks;
     min-width: 0;
     padding: 26px;
-    border: 1px solid var(--border-color);
-    background: var(--surface-color);
+    border: 1px solid var(--glass-border);
+    background: var(--glass-background);
+    box-shadow: var(--glass-shadow);
+    -webkit-backdrop-filter: blur(14px);
+    backdrop-filter: blur(14px);
+
 }
 
 .dashboard-header {
@@ -92,7 +99,7 @@ button, input, textarea, select {
 
 .refresh-tasks {
     flex: 0 0 auto;
-    border: 1px solid var(--border-color);
+    border: 1px solid transparent;
     background: var(--primary-color);
     color: var(--surface-color);
     padding: 9px 12px;
@@ -148,7 +155,7 @@ button, input, textarea, select {
     padding: 12px 14px;
     color: var(--danger-color);
     background: var(--error-background);
-    border: 1px solid var(--stop-border);
+    border: 1px solid var(--danger-color);
     font-size: 13px;
 }
 
@@ -161,7 +168,10 @@ button, input, textarea, select {
     min-width: 0;
     padding: clamp(24px, 4vw, 36px);
     border: 1px solid var(--border-color);
-    background: var(--surface-color);
+    background: var(--glass-background);
+    box-shadow: var(--glass-shadow);
+    -webkit-backdrop-filter: blur(14px);
+    backdrop-filter: blur(14px);
     text-align: center;
 }
 
@@ -265,9 +275,12 @@ button, input, textarea, select {
     width: min(400px, calc(100% - 30px));
     margin: clamp(32px, 10vh, 90px) auto;
     padding: clamp(25px, 5vw, 40px);
-    border: 1px solid var(--border-color);
+    border: 1px solid var(--glass-border);
     color: var(--text-primary);
-    background: var(--surface-color);
+    background: var(--glass-background);
+    box-shadow: var(--glass-shadow);
+    -webkit-backdrop-filter: blur(14px);
+    backdrop-filter: blur(14px);
 }
 
 .auth-page h1 {
