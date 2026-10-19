@@ -10,6 +10,20 @@ import { softDeleteTask, getNextTask, getAllTasks } from './taskService.js';
 import { registerUser, loginUser } from './authService.js';
 import { verifyToken } from './verifyToken.js';
 
+// ===========================================================================
+// Process-Level Safety Nets (Catch unhandled background crashes)
+// ===========================================================================
+process.on('unhandledRejection', (reason: unknown) => {
+  console.error('[Fatal] Unhandled Promise Rejection detected:', reason);
+  // In a full production environment, you might initiate a graceful shutdown here
+});
+
+process.on('uncaughtException', (error: Error) => {
+  console.error('[Fatal] Uncaught Synchronous Exception detected:', error);
+  // Perform synchronous cleanup if needed before exiting
+  process.exit(1);
+});
+
 const app = express();
 app.use(helmet());
 app.use(cors());
@@ -176,6 +190,26 @@ app.post('/api/auth/login', async (req: Request, res: Response) => {
   } catch (err: unknown) {
     res.status(401).json({ error: err instanceof Error ? err.message : String(err) });
   }
+});
+
+// ---------------------------------------------------------------------------
+// Global Error Handling
+// ---------------------------------------------------------------------------
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
+app.use((err: unknown, _req: Request, res: Response, _next: express.NextFunction) => {
+  const message = err instanceof Error ? err.message : String(err);
+  const stack = err instanceof Error ? err.stack : undefined;
+  
+  const status = typeof err === 'object' && err !== null && 'status' in err
+    ? Number((err as Record<string, unknown>).status)
+    : 500;
+
+  console.error(`[Error] ${status} - ${message}`, stack);
+
+  const statusCode = !isNaN(status) ? status : 500;
+  res.status(statusCode).json({
+    error: statusCode === 500 ? 'Internal Server Error' : message,
+  });
 });
 
 // ---------------------------------------------------------------------------
