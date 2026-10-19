@@ -2,22 +2,321 @@
 
 :root {
     font-family: 'Inter', sans-serif;
-    color: var(--page-bg);
-    background-color: var(--page-bg);
+    color: var(--text-primary);
+    background-color: var(--surface-color);
     font-synthesis: none;
     text-rendering: optimizeLegibility;
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
     --font-heading: 'Outfit', 'Inter', sans-serif;
     --font-body: 'Inter', sans-serif;
-    --primary-color: #635bdb;
-    --primary-soft: #eeedff;
-    --secondary-color: #f59e0b;
-    --page-bg: #f5f7fb;
+    --primary-color: #218b43;
+    --primary-soft: #eff9f1;
+    --navigation-color: #E1AD01;
+    --timer-color: #ff4545;
+    --task-color: #438ee8;
     --surface-color: #ffffff;
-    --surface-muted: #f8f9fd;
-    --text-primary: #20243a;
-    --border-color: #e4e8f1;
+    --surface-muted: #fbfdfb;
+    --text-primary: #202020;
+    --text-secondary: #68716b;
+    --border-color: #bfe6c8;
     --danger-color: #d6455d;
     --success-color: #16845d;
+    --error-background: #fff0f2;
+    --focus-message-border: #bdebd9;
+    --focus-message-background: #edfbf5;
+}
+
+* { box-sizing: border-box; }
+
+html {
+    min-width: 320px;
+    min-height: 100%;
+}
+
+body {
+    margin: 0;
+    min-width: 320px;
+    min-height: 100vh;
+    background: var(--surface-color);
+}
+
+button, input, textarea, select {
+    font: inherit;
+}
+
+.home-page {
+    min-height: 100vh;
+    padding: clamp(18px, 4vw, 48px);
+}
+
+.home-page > main {
+    width: min(1120px, 100%);
+    margin: 0 auto;
+}
+
+.home-smart-focus {
+    width: 100%;
+}
+
+.smart-focus-ui {
+    display: grid;
+    grid-template-columns: minmax(0, 1.05fr) minmax(320px, .95);
+    grid-template-areas: 'heading heading' 'tasks timer' 'session timer' 'notice notice';
+    gap: 22px;
+    align-items: start;
+}
+
+.dashboard {
+    grid-area: tasks;
+    min-width: 0;
+    padding: 26px;
+    border: 1px solid var(--border-color);
+    background: var(--surface-color);
+}
+
+.dashboard-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    margin-bottom: 20px;
+}
+
+.dashboard-header h1 {
+    margin: 0;
+    font: 600 20px/1.2 var(--font-heading);
+    letter-spacing: -.4px;
+    color: var(--text-primary);
+}
+
+.refresh-tasks {
+    flex: 0 0 auto;
+    border: 1px solid var(--border-color);
+    background: var(--primary-color);
+    color: var(--surface-color);
+    padding: 9px 12px;
+    font-size: 12px;
+    font-weight: 600;
+    cursor: pointer;
+}
+
+.task-list {
+    display: grid;
+    gap: 10px;
+}
+
+.task-card {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 6px;
+    width: 100%;
+    padding: 15px 16px;
+    text-align: left;
+    border: 1px solid var(--border-color);
+    background: var(--surface-color);
+    cursor: pointer;
+}
+
+.task-card-title {
+    font-weight: 600;
+    font-size: 14px;
+    color: var(--task-color);
+}
+
+.task-card-description {
+    color: var(--task-color);
+    font-size: 12px;
+    line-height: 1.55;
+}
+
+.task-card-due-date {
+    color: var(--task-color);
+    font-size: 11px;
+    font-weight: 600;
+}
+
+.empty-state {
+    padding: 22px 14px;
+    color: var(--task-color);
+    font-size: 12px;
+    line-height: 1.55;
+}
+
+.dashboard-error, .timer-error, .smart-focus-error {
+    padding: 12px 14px;
+    color: var(--danger-color);
+    background: var(--error-background);
+    border: 1px solid var(--stop-border);
+    font-size: 13px;
+}
+
+.dashboard-error {
+    margin-bottom: 14px;
+}
+
+.pomodoro-timer {
+    grid-area: timer;
+    min-width: 0;
+    padding: clamp(24px, 4vw, 36px);
+    border: 1px solid var(--border-color);
+    background: var(--surface-color);
+    text-align: center;
+}
+
+.timer-header h2 {
+    margin: 0 0 20px;
+    color: var(--text-secondary);
+    font: 600 14px/1.2 var(--font-body);
+    letter-spacing: 1.5px;
+}
+
+.timer-display {
+    display: grid;
+    place-items: center;
+    width: min(250px, 100%);
+    aspect-ratio: 1;
+    margin: 0 auto 20px;
+    border: 9px solid var(--timer-color);
+    color: var(--timer-color);
+    font: 600 clamp(46px, 7vw, 64px)/1 var(--font-heading);
+    font-variant-numeric: tabular-nums;
+    letter-spacing: -2px;
+}
+
+.timer-task {
+    min-height: 20px;
+    margin: 0 0 22px;
+    color: var(--text-secondary);
+    font-size: 13px;
+    line-height: 1.6;
+    overflow-wrap: anywhere;
+}
+
+.timer-task strong {
+    color: var(--text-primary);
+}
+
+.timer-error {
+    margin-bottom: 16px;
+    text-align: left;
+}
+
+.timer-controls {
+    display: flex;
+    justify-content: center;
+    flex-wrap: wrap;
+    gap: 10px;
+}
+
+.timer-controls button, .start-session {
+    min-height: 42px;
+    padding: 11px 18px;
+    border: 1px solid transparent;
+    font-size: 13px;
+    font-weight: 600;
+    cursor: pointer;
+}
+
+.timer-start, .start-session {
+    color: var(--surface-color);
+    background: var(--primary-color);
+}
+
+.timer-pause {
+    color: var(--surface-color);
+    background: var(--navigation-color);
+}
+
+.timer-stop {
+    color: var(--surface-color);
+    background: var(--danger-color);
+}
+
+.timer-reset {
+    color: var(--surface-color);
+    background: var(--task-color);
+}
+
+.smart-focus-session-button {
+    grid-area: session;
+}
+
+.start-session {
+    width: 100%;
+    min-height: 48px;
+}
+
+.smart-focus-message {
+    grid-area: notice;
+    padding: 12px 15px;
+    border: 1px solid var(--focus-message-border);
+    color: var(--success-color);
+    background: var(--focus-message-background);
+    font-size: 13px;
+}
+
+.smart-focus-error {
+    grid-area: notice;
+}
+
+.auth-page {
+    width: min(400px, calc(100% - 30px));
+    margin: clamp(32px, 10vh, 90px) auto;
+    padding: clamp(25px, 5vw, 40px);
+    border: 1px solid var(--border-color);
+    color: var(--text-primary);
+    background: var(--surface-color);
+}
+
+.auth-page h1 {
+    margin: 0 0 25px;
+    font: 700 32px/1.1 var(--font-heading);
+    letter-spacing: -.8px;
+}
+
+.auth-page form {
+    display: grid;
+    gap: 10px;
+}
+
+.auth-page label {
+    margin-top: 8px;
+    color: var(--text-secondary);
+    font-size: 12px;
+    font-weight: 600;
+}
+
+.auth-page input {
+    width: 100%;
+    min-height: 46px;
+    padding: 12px 13px;
+    border: 1px solid var(--border-color);
+    color: var(--text-primary);
+    background: var(--surface-muted);
+}
+
+.auth-page input:focus {
+    border-color: var(--primary-color);
+}
+
+.auth-page form button {
+    min-height: 46px;
+    margin-top: 12px;
+    color: var(--surface-color);
+    background: var(--primary-color);
+    font-weight: 600;
+    cursor: pointer;
+}
+
+.auth-page p {
+    margin: 22px 0 0;
+    color: var(--text-secondary);
+    font-size: 12px;
+}
+
+.auth-page a {
+    color: var(--primary-color);
+    font-weight: 600;
 }
