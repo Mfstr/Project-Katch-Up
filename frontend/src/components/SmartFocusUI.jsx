@@ -51,7 +51,7 @@ export default function SmartFocusUI() {
 
         setPhase(nextPhase);
         setRemainingSeconds(
-            Number.isFinitie(nextRemaining)
+            Number.isFinite(nextRemaining)
                 ? nextRemaining
                 : nextPhase === 'SHORT_BREAK'
                     ? SHORT_BREAK_SECONDS
@@ -138,7 +138,7 @@ export default function SmartFocusUI() {
 
             setActive(true);
             setMessage(`Session Started: ${nextTask.title}`);
-            await refreshTimer;
+            await refreshTimer();
         } catch (requestError) {
             setError(
                 requestError instanceof Error
@@ -211,7 +211,7 @@ export default function SmartFocusUI() {
                 task={task}
                 phase={phase}
                 remainingSeconds={remainingSeconds}
-                isactive={isActive}
+                isActive={isActive}
                 isLoading={isLoading}
                 error={''}
                 onStart={handleStart}
