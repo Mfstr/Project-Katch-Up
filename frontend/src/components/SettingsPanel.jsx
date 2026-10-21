@@ -1,11 +1,11 @@
 import { useState } from 'react';
 
 const BACKGROUNDS = [
-    { value: 'plain', label: 'Plain white', description: 'Clean white background' },
-    { value: 'paper', label: 'Warm paper', description: 'Gives background a paper-like texture'},
-    { value: 'garden', label: 'Soft greenery', description:'Subtle green garden-like tones' },
-    { value: 'sunset', label: 'Warm sunset', description: 'Muted peach and cream tones' },
-    { value: 'blue-grid', label: 'Blue grid', description: 'Light blue notebook grid'}
+    { value: 'plain', label: 'Plain White', description: 'Clean white background' },
+    { value: 'paper', label: 'Warm Paper', description: 'Gives background a paper-like texture'},
+    { value: 'greenery', label: 'Soft Greenery', description:'Subtle green garden-like tones' },
+    { value: 'sunset', label: 'Warm Sunset', description: 'Muted peach and cream tones' },
+    { value: 'blue-grid', label: 'Blue Grid', description: 'Light blue notebook grid'}
 ]
 
 export default function SettingsPanel({ background, onBackgroundChange }) {
@@ -35,6 +35,9 @@ export default function SettingsPanel({ background, onBackgroundChange }) {
                             </option>
                         ))}
                     </select>
+                    <p className="background-selector-help">
+                        Choose a look for your background.
+                    </p>
                 </div>
             )}
         </aside>
