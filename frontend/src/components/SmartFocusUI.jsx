@@ -159,7 +159,7 @@ export default function SmartFocusUI() {
 
     const startSession = async () => {
         completionHandledRef.current = false;
-        sessionCompleted(false);
+        setSessionCompleted(false);
         setLoading(true);
         setMessage('');
         setError('');
