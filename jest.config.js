@@ -12,4 +12,5 @@ export default {
     '^(\\.{1,2}/.*)\\.js$': '$1',
   },
   setupFiles: ['./backend/tests/jest.setup.js'],
+  testPathIgnorePatterns: ['/node_modules/', '<rootDir>/backend/tests/e2e/'], // Ignore end-to-end tests in Jest
 };
