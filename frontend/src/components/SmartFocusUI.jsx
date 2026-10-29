@@ -46,6 +46,7 @@ export default function SmartFocusUI() {
     const [sessionCompleted, setSessionCompleted] = useState(false);
     const chimeRef = useRef(null);
     const completionHandledRef = useRef(false);
+    const notificationPermRequestRef = useRef(false);
     const [background, setBackground] = useState(() => {
         try {
             return window.localStorage.getItem('project-katchup-background') || 'plain';
@@ -77,6 +78,43 @@ export default function SmartFocusUI() {
         const status = await getTimerStatus();
         applyTimerStatus(status);
     }, [applyTimerStatus]);
+
+    useEffect(() => {
+        if (typeof window === 'undefined' || !('Notification' in window)) return;
+        if (Notification.permission !== 'default') return;
+        if (notificationPermRequestRef.current) return;
+
+        notificationPermRequestRef.current = true;
+
+        try {
+            Notification.requestPermission().catch((permissionError) => {
+                console.warn('Unable to request notification permission.', permissionError);
+            });
+        } catch (permissionError) {
+            console.warn('Unable to request notification permission.', permissionError);
+        }
+    }, []);
+
+    const showCompletionNotification = useCallback(() => {
+        if (typeof window === 'undefined' || !('Notification' in window)) return;
+        if (Notification.permission !== 'granted') return;
+
+        try {
+            const notification = new Notification('Timer Complete', {
+                body: task?.title
+                    ? `Your session for "${task.title}" is complete.`
+                    : 'Your timer has finished.',
+                tag: 'project-katchup-timer-complete',
+            });
+
+            notification.onClick = () => {
+                window.focus();
+                notification.close();
+            };
+        } catch (notificationError) {
+            console.warn('Unable to show the timer completion notification.', notificationError);
+        }
+    }, [task?.title]);
 
     useEffect(() => {
         if (typeof Audio === 'undefined') return undefined;
@@ -124,6 +162,7 @@ export default function SmartFocusUI() {
                 completionHandledRef.current = true;
                 setSessionCompleted(true);
                 playCompletionChime();
+                showCompletionNotification();
                 refreshTimer().catch(() => setActive(false));
             }
         };
@@ -132,7 +171,7 @@ export default function SmartFocusUI() {
         const intervalId = window.setInterval(updateCountdown, 250);
 
         return () => window.clearInterval(intervalId);
-    }, [endTime, isActive, playCompletionChime, refreshTimer]);
+    }, [endTime, isActive, playCompletionChime, refreshTimer, showCompletionNotification]);
 
     const runTimerAction = async (action) => {
         setLoading(true);
