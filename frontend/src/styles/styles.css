@@ -237,6 +237,17 @@ button, a, .task-card, .refresh-tasks, .timer-controls button, .start-session, .
     color: var(--text-primary);
 }
 
+.timer-completion-message {
+    margin: 0 0 16px;
+    padding: 10px 12px;
+    border: 1px solid var(--focus-message-border);
+    color: var(--success-color);
+    background: var(--focus-message-background);
+    font-size: 13px;
+    font-weight: 600;
+    line-height: 1.45;
+}
+
 .timer-error {
     margin-bottom: 16px;
     text-align: left;

@@ -18,6 +18,7 @@ export default function PomodoroTimer({
     remainingSeconds = 20 * 60,
     isActive = false,
     isLoading = false,
+    sessionCompleted = false,
     error = '',
     onStart,
     onPause,
@@ -40,6 +41,12 @@ export default function PomodoroTimer({
                 </p>
             ) : (
                 <p className="timer-task">Select a task to begin.</p>
+            )}
+
+            {sessionCompleted && (
+                <p className="timer-completion-message" role="status">
+                    Time's up!
+                </p>
             )}
 
             {error && (
