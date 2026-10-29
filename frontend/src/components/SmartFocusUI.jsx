@@ -100,7 +100,7 @@ export default function SmartFocusUI() {
         chime.currentTime = 0;
         chime.play().catch((playbackError) => {
             console.warn('Unable to play the timer completion chime.', playbackError);
-        })
+        });
     }, []);
 
     useEffect(() => {
