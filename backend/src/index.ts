@@ -3,12 +3,13 @@ import express from 'express';
 import cors from 'cors';
 import helmet from 'helmet';
 import rateLimit from 'express-rate-limit';
-import type { Request, Response } from 'express';
+import type { Request, Response, NextFunction } from 'express';
 import { PomodoroTimer } from './pomodoroLogic.js';
 import { addCalendar, listCalendars, deleteCalendar, syncCalendarById } from './calendarService.js';
-import { softDeleteTask, getNextTask, getAllTasks } from './taskService.js';
+import { softDeleteTask, getNextTask, getAllTasks, createTask, updateTask } from './taskService.js';
 import { registerUser, loginUser } from './authService.js';
 import { verifyToken } from './verifyToken.js';
+import { logger, httpLogger } from './logger.js';
 
 // ===========================================================================
 // Process-Level Safety Nets (Catch unhandled background crashes)
@@ -28,6 +29,7 @@ const app = express();
 app.use(helmet());
 app.use(cors());
 app.use(express.json());
+app.use(httpLogger);
 
 const timer = new PomodoroTimer();
 
@@ -70,6 +72,7 @@ app.get('/api/calendars', async (_req: Request, res: Response) => {
     const calendars = await listCalendars();
     res.json(calendars);
   } catch (err: unknown) {
+    logger.error({ err }, 'Error retrieving calendars');
     res.status(500).json({ error: err instanceof Error ? err.message : String(err) });
   }
 });
@@ -84,6 +87,7 @@ app.post('/api/calendars', async (req: Request, res: Response) => {
     const calendar = await addCalendar(url, name, description);
     res.status(201).json(calendar);
   } catch (err: unknown) {
+    logger.error({ err }, 'Error adding calendar');
     res.status(500).json({ error: err instanceof Error ? err.message : String(err) });
   }
 });
@@ -93,6 +97,7 @@ app.delete('/api/calendars/:id', async (req: Request, res: Response) => {
     await deleteCalendar(req.params['id'] as string);
     res.status(204).send();
   } catch (err: unknown) {
+    logger.error({ err }, 'Error deleting calendar');
     res.status(500).json({ error: err instanceof Error ? err.message : String(err) });
   }
 });
@@ -102,6 +107,7 @@ app.post('/api/calendars/:id/sync', async (req: Request, res: Response) => {
     const count = await syncCalendarById(req.params['id'] as string);
     res.json({ message: `Synced ${count} task(s).`, count });
   } catch (err: unknown) {
+    logger.error({ err }, 'Error syncing calendar');
     res.status(500).json({ error: err instanceof Error ? err.message : String(err) });
   }
 });
@@ -117,22 +123,64 @@ app.get('/api/tasks', async (req: Request, res: Response) => {
     const tasks = await getAllTasks(profileId);
     res.json(tasks);
   } catch (err: unknown) {
+    logger.error({ err }, 'Error retrieving tasks');
     res.status(500).json({ error: err instanceof Error ? err.message : String(err) });
   }
 });
 
 app.get('/api/tasks/next', async (req: Request, res: Response) => {
   try {
-    const profileId = req.user!.id;
+    const profileId = req.user?.id ?? '';
     const task = await getNextTask(profileId);
-    
+
     if (!task) {
       res.status(404).json({ error: 'No upcoming tasks found.' });
       return;
     }
-    
+
     res.json(task);
   } catch (err: unknown) {
+    res.status(500).json({ error: err instanceof Error ? err.message : String(err) });
+  }
+});
+
+app.post('/api/tasks', async (req: Request, res: Response) => {
+  const { title } = req.body ?? {};
+  if (!title || typeof title !== 'string' || !title.trim()) {
+    res.status(400).json({ error: 'title is required.' });
+    return;
+  }
+
+  try {
+    const profileId = req.user?.id;
+    const taskData = {
+      ...req.body,
+      profile_id: req.body?.profile_id ?? profileId,
+    };
+    const task = await createTask(taskData);
+    res.status(201).json(task);
+  } catch (err: unknown) {
+    res.status(500).json({ error: err instanceof Error ? err.message : String(err) });
+  }
+});
+
+app.put('/api/tasks/:id', async (req: Request, res: Response) => {
+  try {
+    const taskId = parseInt(req.params['id'] as string, 10);
+    if (isNaN(taskId)) {
+      res.status(400).json({ error: 'Invalid task ID' });
+      return;
+    }
+
+    const task = await updateTask(taskId, req.body ?? {});
+    if (!task) {
+      res.status(404).json({ error: 'Task not found' });
+      return;
+    }
+
+    res.json(task);
+  } catch (err: unknown) {
+    logger.error({ err }, 'Error retrieving next task');
     res.status(500).json({ error: err instanceof Error ? err.message : String(err) });
   }
 });
@@ -147,6 +195,7 @@ app.delete('/api/tasks/:id', async (req: Request, res: Response) => {
     await softDeleteTask(taskId);
     res.status(204).send();
   } catch (err: unknown) {
+    logger.error({ err }, 'Error deleting task');
     res.status(500).json({ error: err instanceof Error ? err.message : String(err) });
   }
 });
@@ -174,6 +223,7 @@ app.post('/api/auth/register', async (req: Request, res: Response) => {
     const data = await registerUser(email, password);
     res.status(201).json(data);
   } catch (err: unknown) {
+    logger.error({ err }, 'Error registering user');
     res.status(500).json({ error: err instanceof Error ? err.message : String(err) });
   }
 });
@@ -188,6 +238,7 @@ app.post('/api/auth/login', async (req: Request, res: Response) => {
     const data = await loginUser(email, password);
     res.status(200).json(data);
   } catch (err: unknown) {
+    logger.warn({ err }, 'User login failed');
     res.status(401).json({ error: err instanceof Error ? err.message : String(err) });
   }
 });
@@ -195,18 +246,25 @@ app.post('/api/auth/login', async (req: Request, res: Response) => {
 // ---------------------------------------------------------------------------
 // Global Error Handling
 // ---------------------------------------------------------------------------
-// eslint-disable-next-line @typescript-eslint/no-unused-vars
-app.use((err: unknown, _req: Request, res: Response, _next: express.NextFunction) => {
+app.use((err: unknown, _req: Request, res: Response, _next: NextFunction) => {
+  void _next; // Explicitly mark _next as unused to avoid TypeScript warnings
+  // Prevent sending a response if headers were already sent downstream
+  if (res.headersSent) {
+    return;
+  }
+
   const message = err instanceof Error ? err.message : String(err);
-  const stack = err instanceof Error ? err.stack : undefined;
   
-  const status = typeof err === 'object' && err !== null && 'status' in err
+  // Extract custom status codes (e.g., 400, 404, 401) or default to 500
+  const rawStatus = typeof err === 'object' && err !== null && 'status' in err
     ? Number((err as Record<string, unknown>).status)
     : 500;
 
-  console.error(`[Error] ${status} - ${message}`, stack);
+  const statusCode = !isNaN(rawStatus) && rawStatus >= 400 && rawStatus < 600 ? rawStatus : 500;
 
-  const statusCode = !isNaN(status) ? status : 500;
+  // Use structured logging instead of console.error
+  logger.error({ err, statusCode }, message);
+
   res.status(statusCode).json({
     error: statusCode === 500 ? 'Internal Server Error' : message,
   });
@@ -219,7 +277,7 @@ app.use((err: unknown, _req: Request, res: Response, _next: express.NextFunction
 const PORT = process.env.PORT ?? 5050;
 
 if (process.env.NODE_ENV !== 'test') {
-  app.listen(PORT, () => console.log(`Server running on port ${PORT}.`));
+  app.listen(PORT, () => logger.info({ port: PORT }, `Server running on port ${PORT}.`));
 }
 
 export default app;
