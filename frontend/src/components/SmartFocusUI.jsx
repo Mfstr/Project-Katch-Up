@@ -12,6 +12,7 @@ import {
 import StartSessionButton from './StartSessionButton.jsx';
 import Dashboard from './Dashboard.jsx';
 import PomodoroTimer from './PomodoroTimer.jsx';
+import SettingsPanel from './SettingsPanel.jsx';
 
 const DEFAULT_FOCUS_SECONDS = 20 * 60;
 const SHORT_BREAK_SECONDS = 5 * 60;
@@ -42,6 +43,13 @@ export default function SmartFocusUI() {
     const [isLoading, setLoading] = useState(false);
     const [message, setMessage] = useState('');
     const [error, setError] = useState('');
+    const [background, setBackground] = useState(() => {
+        try {
+            return window.localStorage.getItem('project-katchup-background') || 'plain';
+        } catch {
+            return 'plain';
+        }
+    });
 
     const applyTimerStatus = useCallback((status) => {
         if (!status) return;
@@ -51,7 +59,7 @@ export default function SmartFocusUI() {
 
         setPhase(nextPhase);
         setRemainingSeconds(
-            Number.isFinitie(nextRemaining)
+            Number.isFinite(nextRemaining)
                 ? nextRemaining
                 : nextPhase === 'SHORT_BREAK'
                     ? SHORT_BREAK_SECONDS
@@ -138,7 +146,7 @@ export default function SmartFocusUI() {
 
             setActive(true);
             setMessage(`Session Started: ${nextTask.title}`);
-            await refreshTimer;
+            await refreshTimer();
         } catch (requestError) {
             setError(
                 requestError instanceof Error
@@ -147,6 +155,15 @@ export default function SmartFocusUI() {
             );
         } finally {
             setLoading(false);
+        }
+    };
+
+    const handleBackgroundChange = (nextBackground) => {
+        setBackground(nextBackground);
+        try {
+            window.localStorage.setItem('project-katchup-background', nextBackground);
+        } catch {
+            // Selector will still operate if and when storage is unavailable.
         }
     };
 
@@ -181,10 +198,15 @@ export default function SmartFocusUI() {
         });
 
     return (
-        <main className="smart-focus-ui">
+        <main className={`smart-focus-ui workspace-background-${background}`}>
             <Dashboard
                 selectedTask={task}
                 onSelectTask={handleSelectTask}
+            />
+
+            <SettingsPanel 
+                background={background}
+                onBackgroundChange={handleBackgroundChange}
             />
             
             <div className="smart-focus-session-button">
@@ -211,7 +233,7 @@ export default function SmartFocusUI() {
                 task={task}
                 phase={phase}
                 remainingSeconds={remainingSeconds}
-                isactive={isActive}
+                isActive={isActive}
                 isLoading={isLoading}
                 error={''}
                 onStart={handleStart}
