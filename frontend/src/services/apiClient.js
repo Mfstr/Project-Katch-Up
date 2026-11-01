@@ -2,83 +2,103 @@ const API_BASE_URL = import.meta.env.VITE_API_URL?.replace(/\/$/, '') || 'http:/
 const AUTH_TOKEN_KEY = 'authToken';
 
 export function getAuthToken() {
-    return localStorage.getItem(AUTH_TOKEN_KEY);
+  return localStorage.getItem(AUTH_TOKEN_KEY);
 }
 
 export async function apiClient(path, options = {}) {
-    const authToken = getAuthToken();
+  const authToken = getAuthToken();
 
-    const headers = {
-        'Content-Type': 'application/json',
-        ...(options.headers || {}),
-    };
+  const headers = {
+    'Content-Type': 'application/json',
+    ...(options.headers || {}),
+  };
 
-    if (authToken) {
-        headers.Authorization = `Bearer ${authToken}`;
-    }
+  if (authToken) {
+    headers.Authorization = `Bearer ${authToken}`;
+  }
 
-    const response = await fetch(`${API_BASE_URL}${path}`, {
-        ...options,
-        headers,
-    });
+  const response = await fetch(`${API_BASE_URL}${path}`, {
+    ...options,
+    headers,
+  });
 
-    let body = null;
-    const contentType = response.headers.get('content-type') || '';
+  let body = null;
+  const contentType = response.headers.get('content-type') || '';
 
-    if (contentType.includes('application/json')) {
-        body = await response.json();
-    } else if (response.status !== 204) {
-        body = await response.text();
-    }
+  if (contentType.includes('application/json')) {
+    body = await response.json();
+  } else if (response.status !== 204) {
+    body = await response.text();
+  }
 
-    if (!response.ok) {
-        const message =
-            body && typeof body === 'object' && (body.error || body.message)
-                ? body.error || body.message
-                : response.statusText || `Request failed with status ${response.status}.`;
+  if (!response.ok) {
+    const message =
+      body && typeof body === 'object' && (body.error || body.message)
+        ? body.error || body.message
+        : response.statusText || `Request failed with status ${response.status}.`;
 
-            throw new Error(message);
-    }
+    throw new Error(message);
+  }
 
-    return body;
+  return body;
 }
 
 function normalizeTasks(payload) {
-    if (Array.isArray(payload)) return payload;
-    if (Array.isArray(payload?.tasks)) return payload.tasks;
-    if (Array.isArray(payload?.data)) return payload.data;
-    return [];
+  if (Array.isArray(payload)) return payload;
+  if (Array.isArray(payload?.tasks)) return payload.tasks;
+  if (Array.isArray(payload?.data)) return payload.data;
+  return [];
 }
 
 export async function getTasks() {
-    return normalizeTasks(await apiClient('/api/tasks'));
+  return normalizeTasks(await apiClient('/api/tasks'));
+}
+
+export async function createTask(task) {
+  return apiClient('/api/tasks', {
+    method: 'POST',
+    body: JSON.stringify(task),
+  });
+}
+
+export async function updateTask(id, updates) {
+  return apiClient(`/api/tasks/${id}`, {
+    method: 'PUT',
+    body: JSON.stringify(updates),
+  });
+}
+
+export async function deleteTask(id) {
+  return apiClient(`/api/tasks/${id}`, {
+    method: 'DELETE',
+  });
 }
 
 export async function getNextTask() {
-    return apiClient('/api/tasks/next');
+  return apiClient('/api/tasks/next');
 }
 
 export async function startTimer({ taskId, durationSeconds } = {}) {
-    return apiClient('/api/timer/start', {
-        method: 'POST',
-        body: JSON.stringify({ taskId, durationSeconds }),
-    });
+  return apiClient('/api/timer/start', {
+    method: 'POST',
+    body: JSON.stringify({ taskId, durationSeconds }),
+  });
 }
 
 export async function pauseTimer() {
-    return apiClient('/api/timer/pause', { method: 'POST'});
+  return apiClient('/api/timer/pause', { method: 'POST' });
 }
 
 export async function stopTimer() {
-    return apiClient('/api/timer/complete', { method: 'POST'});
+  return apiClient('/api/timer/complete', { method: 'POST' });
 }
 
 export async function resetTimer() {
-    return apiClient('/api/timer/reset', { method: 'POST'});
+  return apiClient('/api/timer/reset', { method: 'POST' });
 }
 
 export async function getTimerStatus() {
-    return apiClient('/api/timer/status');
+  return apiClient('/api/timer/status');
 }
 
 export default apiClient;

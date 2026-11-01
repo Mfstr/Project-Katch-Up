@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 
 import {
     getNextTask,
@@ -12,6 +12,7 @@ import {
 import StartSessionButton from './StartSessionButton.jsx';
 import Dashboard from './Dashboard.jsx';
 import PomodoroTimer from './PomodoroTimer.jsx';
+import SettingsPanel from './SettingsPanel.jsx';
 
 const DEFAULT_FOCUS_SECONDS = 20 * 60;
 const SHORT_BREAK_SECONDS = 5 * 60;
@@ -42,6 +43,17 @@ export default function SmartFocusUI() {
     const [isLoading, setLoading] = useState(false);
     const [message, setMessage] = useState('');
     const [error, setError] = useState('');
+    const [sessionCompleted, setSessionCompleted] = useState(false);
+    const chimeRef = useRef(null);
+    const completionHandledRef = useRef(false);
+    const notificationPermRequestRef = useRef(false);
+    const [background, setBackground] = useState(() => {
+        try {
+            return window.localStorage.getItem('project-katchup-background') || 'plain';
+        } catch {
+            return 'plain';
+        }
+    });
 
     const applyTimerStatus = useCallback((status) => {
         if (!status) return;
@@ -68,6 +80,68 @@ export default function SmartFocusUI() {
     }, [applyTimerStatus]);
 
     useEffect(() => {
+        if (typeof window === 'undefined' || !('Notification' in window)) return;
+        if (Notification.permission !== 'default') return;
+        if (notificationPermRequestRef.current) return;
+
+        notificationPermRequestRef.current = true;
+
+        try {
+            Notification.requestPermission().catch((permissionError) => {
+                console.warn('Unable to request notification permission.', permissionError);
+            });
+        } catch (permissionError) {
+            console.warn('Unable to request notification permission.', permissionError);
+        }
+    }, []);
+
+    const showCompletionNotification = useCallback(() => {
+        if (typeof window === 'undefined' || !('Notification' in window)) return;
+        if (Notification.permission !== 'granted') return;
+
+        try {
+            const notification = new Notification('Timer Complete', {
+                body: task?.title
+                    ? `Your session for "${task.title}" is complete.`
+                    : 'Your timer has finished.',
+                tag: 'project-katchup-timer-complete',
+            });
+
+            notification.onClick = () => {
+                window.focus();
+                notification.close();
+            };
+        } catch (notificationError) {
+            console.warn('Unable to show the timer completion notification.', notificationError);
+        }
+    }, [task?.title]);
+
+    useEffect(() => {
+        if (typeof Audio === 'undefined') return undefined;
+
+        const chime = new Audio(`${import.meta.env.BASE_URL}audio/timer-chime.mp3`);
+        chime.preload = 'auto';
+        chime.volume = 0.75;
+        chimeRef.current = chime;
+
+        return () => {
+            chime.pause();
+            chime.currentTime = 0;
+            chimeRef.current = null;
+        };
+    }, []);
+
+    const playCompletionChime = useCallback(() => {
+        const chime = chimeRef.current;
+        if (!chime) return;
+
+        chime.currentTime = 0;
+        chime.play().catch((playbackError) => {
+            console.warn('Unable to play the timer completion chime.', playbackError);
+        });
+    }, []);
+
+    useEffect(() => {
         refreshTimer().catch(() => {
             // Default local timer state can still be used if server is down.
         });
@@ -84,7 +158,11 @@ export default function SmartFocusUI() {
             
             setRemainingSeconds(nextRemaining);
 
-            if (nextRemaining === 0) {
+            if (nextRemaining === 0 && !completionHandledRef.current) {
+                completionHandledRef.current = true;
+                setSessionCompleted(true);
+                playCompletionChime();
+                showCompletionNotification();
                 refreshTimer().catch(() => setActive(false));
             }
         };
@@ -93,7 +171,7 @@ export default function SmartFocusUI() {
         const intervalId = window.setInterval(updateCountdown, 250);
 
         return () => window.clearInterval(intervalId);
-    }, [endTime, isActive, refreshTimer]);
+    }, [endTime, isActive, playCompletionChime, refreshTimer, showCompletionNotification]);
 
     const runTimerAction = async (action) => {
         setLoading(true);
@@ -119,6 +197,8 @@ export default function SmartFocusUI() {
     };
 
     const startSession = async () => {
+        completionHandledRef.current = false;
+        setSessionCompleted(false);
         setLoading(true);
         setMessage('');
         setError('');
@@ -150,14 +230,25 @@ export default function SmartFocusUI() {
         }
     };
 
+    const handleBackgroundChange = (nextBackground) => {
+        setBackground(nextBackground);
+        try {
+            window.localStorage.setItem('project-katchup-background', nextBackground);
+        } catch {
+            // Selector will still operate if and when storage is unavailable.
+        }
+    };
+
     const handleSelectTask = (selectedTask) => {
         setTask(selectedTask);
         setMessage('');
         setError('');
     };
 
-    const handleStart = () =>
-        runTimerAction(() =>
+    const handleStart = () => {
+        completionHandledRef.current = false;
+        setSessionCompleted(false);
+        return runTimerAction(() =>
             startTimer({
                 taskId: task?.id,
                 durationSeconds:
@@ -166,12 +257,19 @@ export default function SmartFocusUI() {
                         : task?.durationSeconds ?? DEFAULT_FOCUS_SECONDS,
             }),
         );
+    };
     
     const handlePause = () => runTimerAction(pauseTimer);
-    const handleStop = () => runTimerAction(stopTimer);
-    
-    const handleReset = () =>
-        runTimerAction(async () => {
+    const handleStop = () => {
+        completionHandledRef.current = true;
+        setSessionCompleted(false);
+        return runTimerAction(stopTimer);
+    };
+
+    const handleReset = () => {
+        completionHandledRef.current = false;
+        setSessionCompleted(false);
+        return runTimerAction(async () => {
             const response = await resetTimer();
             setPhase('FOCUS');
             setRemainingSeconds(DEFAULT_FOCUS_SECONDS);
@@ -179,12 +277,18 @@ export default function SmartFocusUI() {
             setActive(false);
             return response;
         });
+    };
 
     return (
-        <main className="smart-focus-ui">
+        <main className={`smart-focus-ui workspace-background-${background}`}>
             <Dashboard
                 selectedTask={task}
                 onSelectTask={handleSelectTask}
+            />
+
+            <SettingsPanel 
+                background={background}
+                onBackgroundChange={handleBackgroundChange}
             />
             
             <div className="smart-focus-session-button">
@@ -213,6 +317,7 @@ export default function SmartFocusUI() {
                 remainingSeconds={remainingSeconds}
                 isActive={isActive}
                 isLoading={isLoading}
+                sessionCompleted={sessionCompleted}
                 error={''}
                 onStart={handleStart}
                 onPause={handlePause}
