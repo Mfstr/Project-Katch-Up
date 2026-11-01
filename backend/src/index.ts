@@ -116,7 +116,7 @@ app.get('/api/tasks', async (req: Request, res: Response) => {
 
 app.get('/api/tasks/next', async (req: Request, res: Response) => {
   try {
-    const profileId = req.user?.id ?? '';
+    const profileId = req.user?.id;
     const task = await getNextTask(profileId);
 
     if (!task) {
@@ -126,6 +126,7 @@ app.get('/api/tasks/next', async (req: Request, res: Response) => {
 
     res.json(task);
   } catch (err: unknown) {
+    logger.error({ err }, 'Error retrieving next task');
     res.status(500).json({ error: err instanceof Error ? err.message : String(err) });
   }
 });
