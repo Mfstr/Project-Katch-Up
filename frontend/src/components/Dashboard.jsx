@@ -87,7 +87,7 @@ export default function Dashboard({ selectedTask, onSelectTask, refreshSignal = 
             )}
 
             <div className="task-list" role="list">
-                {tasks.map((task) => {
+                {tasks.map((task, index) => {
                     const dueDate = formatDueDate(task.dueDate);
                     const isSelected = task.id != null && String(selectedTask?.id) === String(task.id);
                     const isDeleting = String(deletingTaskId) === String(task.id) && deletingTaskId !== null;
