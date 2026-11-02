@@ -24,6 +24,7 @@ function formatDueDate(value) {
 export default function Dashboard({
     selectedTask,
     onSelectTask,
+    taskSelectionDisabled = false,
     refreshSignal = 0,
     onDeleteTask,
     deletingTaskId = null,
@@ -108,6 +109,8 @@ export default function Dashboard({
                                 type="button"
                                 className={`task-card${isSelected ? ' selected' : ''}`}
                                 onClick={() => onSelectTask?.(task)}
+                                disabled={taskSelectionDisabled}
+                                title={taskSelectionDisabled ? 'Finish or reset the current session before selecting another task.' : `Select ${task.title}`}
                                 >
                                     <span className="task-card-title">{task.title}</span>
 
