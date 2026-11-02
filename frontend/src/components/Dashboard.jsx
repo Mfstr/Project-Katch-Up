@@ -9,7 +9,7 @@ function normalizeTasks(task) {
         dueDate: task?.dueDate ?? task?.due_date ?? null,
         isComplete: Boolean(task?.isComplete ?? task?.is_complete ?? false),
         durationSeconds: task?.durationSeconds ?? task?.duration_seconds ?? 20 * 60,
-    }
+    };
 }
 
 function formatDueDate(value) {
@@ -21,7 +21,16 @@ function formatDueDate(value) {
     return date.toLocaleDateString();
 }
 
-export default function Dashboard({ selectedTask, onSelectTask, refreshSignal = 0, onDeleteTask, deletingTaskId = null, taskActionError = '', taskActionNotice = '' }) {
+export default function Dashboard({
+    selectedTask,
+    onSelectTask,
+    refreshSignal = 0,
+    onDeleteTask,
+    deletingTaskId = null,
+    taskActionError = '',
+    taskActionNotice = '',
+    taskActionNoticeFading = false,
+}) {
     const [tasks, setTasks] = useState([]);
     const [isLoading, setLoading] = useState(false);
     const [error, setError] = useState('');
@@ -77,7 +86,7 @@ export default function Dashboard({ selectedTask, onSelectTask, refreshSignal = 
             )}
 
             {taskActionNotice && (
-                <div className="dashboard-notice" role="status">
+                <div className={`dashboard-notice auto-dismiss-notice${taskActionNoticeFading ? ' is-fading' : ''}`} role="status">
                     {taskActionNotice}
                 </div>
             )}

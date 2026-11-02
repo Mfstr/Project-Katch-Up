@@ -37,6 +37,31 @@ function normalizeTasks(payload) {
     };
 }
 
+function useAutoDismissNotice(notice, clearNotice, fadeAfterMs = 3500, fadeDurationMs = 450) {
+    const [isFading, setIsFading] = useState(false);
+
+    useEffect(() => {
+        if (!notice) {
+            setIsFading(false);
+            return undefined;
+        }
+
+        setIsFading(false);
+        const fadeTimeout = window.setTimeout(() => setIsFading(true), fadeAfterMs);
+        const clearTimeoutId = window.setTimeout(
+            clearNotice,
+            fadeAfterMs + fadeDurationMs,
+        );
+
+        return () => {
+            window.clearTimeout(fadeTimeout);
+            window.clearTimeout(clearTimeoutId);
+        };
+    }, [notice, clearNotice, fadeAfterMs, fadeDurationMs]);
+
+    return isFading;
+}
+
 export default function SmartFocusUI() {
     const [task, setTask] = useState(null);
     const [phase, setPhase] = useState('FOCUS');
@@ -56,6 +81,12 @@ export default function SmartFocusUI() {
     const [taskNotice, setTaskNotice] = useState('');
     const [taskActionError, setTaskActionError] = useState('');
     const [taskActionNotice, setTaskActionNotice] = useState('');
+    const clearMessageNotice = useCallback(() => setMessage(''), []);
+    const clearTaskNotice = useCallback(() => setTaskNotice(''), []);
+    const clearTaskActionNotice = useCallback(() => setTaskActionNotice(''), []);
+    const isMessageFading = useAutoDismissNotice(message, clearMessageNotice);
+    const isTaskNoticeFading = useAutoDismissNotice(taskNotice, clearTaskNotice);
+    const isTaskActionNoticeFading = useAutoDismissNotice(taskActionNotice, clearTaskActionNotice);
     const chimeRef = useRef(null);
     const completionHandledRef = useRef(false);
     const notificationPermRequestRef = useRef(false);
@@ -393,6 +424,7 @@ export default function SmartFocusUI() {
                 deletingTaskId={deletingTaskId}
                 taskActionError={taskActionError}
                 taskActionNotice={taskActionNotice}
+                taskActionNoticeFading={isTaskActionNoticeFading}
             />
 
             <SettingsPanel 
@@ -403,6 +435,7 @@ export default function SmartFocusUI() {
                 isCreatingTask={isCreatingTask}
                 taskError={taskError}
                 taskNotice={taskNotice}
+                taskNoticeFading={isTaskNoticeFading}
                 onTaskManagerToggle={handleTaskManagerToggle}
                 onTaskManagerClose={handleTaskManagerClose}
                 onTaskFormChange={handleTaskFormChange}
@@ -424,7 +457,7 @@ export default function SmartFocusUI() {
             )}
 
             {message && !error && (
-                <div className="smart-focus-message" role="status">
+                <div className={`smart-focus-message auto-dismiss-notice${isMessageFading ? ' is-fading' : ''}`} role="status">
                     {message}
                 </div>
             )}
