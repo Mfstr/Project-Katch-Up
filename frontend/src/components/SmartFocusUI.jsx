@@ -97,8 +97,8 @@ export default function SmartFocusUI() {
         }
     });
 
-    const updateSessionStarted = useCallback((value) => {
-        setHasStartedSession(value);
+    const updateSessionStarted = useCallback((started) => {
+        setHasStartedSession(started);
         try {
             if (started) {
                 window.sessionStorage.setItem('project-katchup-session-started', 'true');
