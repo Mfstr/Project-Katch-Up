@@ -55,38 +55,54 @@ button, a, .task-card, .refresh-tasks, .timer-controls button, .start-session, .
 }
 
 .home-page {
-    min-height: 100vh;
-    padding: clamp(18px, 4vw, 48px);
+    width: 100%;
+    height: 100vh;
+    height: 100dvh;
+    min-height: 0;
+    padding: 0;
+    overflow: hidden;
 }
 
 .home-page > main {
-    width: min(1120px, 100%);
-    margin: 0 auto;
+    width: 100%;
+    height: 100%;
+    min-height: 100vh;
+    margin: 0;
 }
 
 .home-smart-focus {
     width: 100%;
+    height: 100%;
+    min-height: 0;
 }
 
 .smart-focus-ui {
     display: grid;
-    grid-template-columns: minmax(0, 1fr) minmax(0, .95fr) 92px;
-    grid-template-areas: 'timer tasks settings' 'session session settings' 'notice notice settings';
-    gap: 14px;
+    grid-template-columns: minmax(0, 1fr) minmax(0, .95fr) 108px;
+    grid-template-rows: minmax(0, 1fr) clamp(64px, 8vh, 82px);
+    grid-template-areas: 'timer tasks settings' 'session session settings';
+    gap: clamp(12px, 1.5vw, 22px);
     align-items: stretch;
     position: relative;
-    min-height: 540px;
-    padding: 12px;
-    border: 1px solid var(--text-primary);
+    width: 100%;
+    height: 100vh;
+    height: 100dvh;
+    min-height: 0;
+    padding: clamp(16px, 2.3vw, 28px);
+    border: 0;
     background-color: var(--surface-color);
     background-size: cover;
     background-position: center;
+    background-attachment: fixed;
 }
 
 .dashboard {
     grid-area: tasks;
     min-width: 0;
-    padding: 18px;
+    min-height: 0;
+    overflow-y: auto;
+    overscroll-behavior: contain;
+    padding: clamp(18px, 2vw, 28px);
     border: 1px solid var(--glass-border);
     background: var(--glass-background);
     box-shadow: var(--glass-shadow);
@@ -104,7 +120,7 @@ button, a, .task-card, .refresh-tasks, .timer-controls button, .start-session, .
 
 .dashboard-header h1 {
     margin: 0;
-    font: 600 20px/1.2 var(--font-heading);
+    font: 600 clamp(23px, 1.8vw, 28px)/1.2 var(--font-heading);
     letter-spacing: -.4px;
     color: var(--text-primary);
 }
@@ -114,15 +130,15 @@ button, a, .task-card, .refresh-tasks, .timer-controls button, .start-session, .
     border: 1px solid transparent;
     background: var(--primary-color);
     color: var(--surface-color);
-    padding: 9px 12px;
-    font-size: 12px;
+    padding: 11px 15px;
+    font-size: 13px;
     font-weight: 600;
     cursor: pointer;
 }
 
 .task-list {
     display: grid;
-    gap: 10px;
+    gap: 13px;
 }
 
 .task-list-item {
@@ -138,8 +154,9 @@ button, a, .task-card, .refresh-tasks, .timer-controls button, .start-session, .
     flex-direction: column;
     align-items: flex-start;
     gap: 6px;
+    min-width: 0;
     width: 100%;
-    padding: 15px 16px;
+    padding: 18px 20px;
     text-align: left;
     border: 1px solid var(--border-color);
     background: var(--surface-color);
@@ -165,30 +182,30 @@ button, a, .task-card, .refresh-tasks, .timer-controls button, .start-session, .
 
 .task-card-title {
     font-weight: 600;
-    font-size: 14px;
+    font-size: 16px;
     color: var(--task-color);
 }
 
 .task-card-description {
     color: var(--task-color);
-    font-size: 12px;
-    line-height: 1.55;
+    font-size: 14px;
+    line-height: 1.6;
 }
 
 .task-card-due-date {
     color: var(--task-color);
-    font-size: 11px;
+    font-size: 12px;
     font-weight: 600;
 }
 
 .task-delete-button {
     align-self: stretch;
-    min-width: 72px;
-    padding: 8px 12px;
+    min-width: 82px;
+    padding: 10px 14px;
     border: 1px solid #e8aab3;
     color: var(--danger-color);
     background: #fff7f8;
-    font-size: 11px;
+    font-size: 12px;
     font-weight: 700;
     cursor: pointer;
     transition: color .15s ease, background-color .15s ease, border-color .15s ease;
@@ -201,7 +218,7 @@ button, a, .task-card, .refresh-tasks, .timer-controls button, .start-session, .
 }
 
 .task-delete-button:disabled {
-    opacity: 0.65;
+    opacity: 0.6;
     cursor: not-allowed;
 }
 
@@ -211,9 +228,9 @@ button, a, .task-card, .refresh-tasks, .timer-controls button, .start-session, .
 }
 
 .empty-state {
-    padding: 22px 14px;
+    padding: 26px 18px;
     color: var(--task-color);
-    font-size: 12px;
+    font-size: 14px;
     line-height: 1.55;
 }
 
@@ -241,7 +258,11 @@ button, a, .task-card, .refresh-tasks, .timer-controls button, .start-session, .
 .pomodoro-timer {
     grid-area: timer;
     min-width: 0;
-    padding: clamp(24px, 2.5vw, 30px);
+    min-height: 0;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    padding: clamp(18px, 2.1vw, 28px);
     border: 1px solid var(--border-color);
     background: var(--glass-background);
     box-shadow: var(--glass-shadow);
@@ -253,19 +274,19 @@ button, a, .task-card, .refresh-tasks, .timer-controls button, .start-session, .
 .timer-header h2 {
     margin: 0 0 20px;
     color: var(--text-secondary);
-    font: 600 14px/1.2 var(--font-body);
+    font: 600 16px/1.2 var(--font-body);
     letter-spacing: 1.5px;
 }
 
 .timer-display {
     display: grid;
     place-items: center;
-    width: min(250px, 100%);
+    width: min(310px, 40vh, 100%);
     aspect-ratio: 1;
-    margin: 0 auto 20px;
-    border: 9px solid var(--timer-color);
+    margin: 0 auto 24px;
+    border: 10px solid var(--timer-color);
     color: var(--timer-color);
-    font: 600 clamp(46px, 7vw, 64px)/1 var(--font-heading);
+    font: 600 clamp(52px, 5vw, 76px)/1 var(--font-heading);
     font-variant-numeric: tabular-nums;
     letter-spacing: -2px;
 }
@@ -274,8 +295,8 @@ button, a, .task-card, .refresh-tasks, .timer-controls button, .start-session, .
     min-height: 20px;
     margin: 0 0 22px;
     color: var(--text-secondary);
-    font-size: 13px;
-    line-height: 1.6;
+    font-size: 15px;
+    line-height: 1.65;
     overflow-wrap: anywhere;
 }
 
@@ -303,14 +324,14 @@ button, a, .task-card, .refresh-tasks, .timer-controls button, .start-session, .
     display: flex;
     justify-content: center;
     flex-wrap: wrap;
-    gap: 10px;
+    gap: 12px;
 }
 
 .timer-controls button, .start-session {
-    min-height: 42px;
-    padding: 11px 18px;
+    min-height: 48px;
+    padding: 13px 22px;
     border: 1px solid transparent;
-    font-size: 13px;
+    font-size: 14px;
     font-weight: 600;
     cursor: pointer;
 }
@@ -352,15 +373,32 @@ button:disabled {
 
 .smart-focus-session-button {
     grid-area: session;
+    display: flex;
+    min-width: 0;
+    min-height: 0;
+    height: 100%;
+    align-self: stretch;
+    margin: 0;
 }
 
 .start-session {
+    display: flex;
+    align-items: center;
+    justify-content: center;
     width: 100%;
-    min-height: 48px;
+    height: 100%;
+    min-height: 0;
+    margin: 0;
+    font-size: 15px;
 }
 
 .smart-focus-message {
-    grid-area: notice;
+    position: fixed;
+    top: 14px;
+    left: 50%;
+    translate: -50% 0;
+    width: min(520px, calc(100vw - 32px));
+    z-index: 100;
     padding: 12px 15px;
     border: 1px solid var(--focus-message-border);
     color: var(--success-color);
@@ -369,7 +407,12 @@ button:disabled {
 }
 
 .smart-focus-error {
-    grid-area: notice;
+    position: fixed;
+    top: 14px;
+    left: 50%;
+    translate: -50% 0;
+    width: min(520px, calc(100vw - 32px));
+    z-index: 100;
 }
 
 .smart-focus-ui.workspace-background-plain {
@@ -398,12 +441,15 @@ button:disabled {
     grid-area: settings;
     position: relative;
     z-index: 20;
+    height: 100%;
+    min-height: 0;
+    align-self: stretch;
     display: flex;
     flex-direction: column;
     align-items: center;
-    gap: 9px;
+    gap: 12px;
     min-width: 0;
-    padding: 9px 6px;
+    padding: 14px 10px;
     border: 1px solid var(--navigation-color);
     background: var(--settings-panel-background);
 }
@@ -411,14 +457,14 @@ button:disabled {
 .settings-shortcut {
     display: grid;
     place-items: center;
-    flex: 0 0 46px;
-    width: 46px;
-    height: 46px;
+    flex: 0 0 54px;
+    width: 54px;
+    height: 54px;
     padding: 0;
     border: 1px solid #f0a53b;
     color: #e88a00;
     background: #fffaf0;
-    font-size: 25px;
+    font-size: 29px;
     line-height: 1;
 }
 
@@ -546,10 +592,10 @@ button.settings-task-trigger:hover {
     top: 0;
     right: calc(100% + 10px);
     z-index: 10;
-    width: min(360px, calc(100vw - 40px));
-    max-height: min(82vh, 720px);
+    width: min(400px, calc(100vw - 40px));
+    max-height: min(82vh, 760px);
     overflow-y: auto;
-    padding: 18px;
+    padding: 22px;
     border: 1px solid var(--navigation-color);
     color: var(--text-primary);
     background: var(--surface-color);
@@ -571,14 +617,14 @@ button.settings-task-trigger:hover {
 .task-manager-header h2 {
     margin: 0 0 5px;
     color: var(--text-primary);
-    font: 700 19px/1.2 var(--font-heading);
+    font: 700 21px/1.2 var(--font-heading);
 }
 
 .task-manager-header p {
     margin: 0;
     color: var(--text-secondary);
-    font-size: 11px;
-    line-height: 1.45;
+    font-size: 12px;
+    line-height: 1.5;
 }
 
 .task-manager-close {
@@ -602,7 +648,7 @@ button.settings-task-trigger:hover {
 .task-create-form label {
     margin-top: 4px;
     color: var(--text-secondary);
-    font-size: 11px;
+    font-size: 12px;
     font-weight: 700;
 }
 
@@ -619,7 +665,7 @@ button.settings-task-trigger:hover {
     border: 1px solid var(--border-color);
     color: var(--text-primary);
     background: var(--surface-muted);
-    font-size: 12px;
+    font-size: 13px;
 }
 
 .task-create-form input {
