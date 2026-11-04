@@ -137,6 +137,10 @@ button, a, .task-card, .refresh-tasks, .timer-controls button, .start-session, .
     cursor: pointer;
 }
 
+.task-list-panel {
+    min-width: 0;
+}
+
 .task-list {
     display: grid;
     gap: 13px;
@@ -189,12 +193,223 @@ button, a, .task-card, .refresh-tasks, .timer-controls button, .start-session, .
     border: 0;
 }
 
+.task-view-tabs {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin: 0 0 14px;
+    padding-bottom: 10px;
+    border-bottom: 1px solid var(--border-color);
+}
+
+.task-view-tab {
+    display: inline-flex;
+    align-items: center;
+    gap: 7px;
+    padding: 8px 12px;
+    border: 1px solid transparent;
+    color: var(--text-secondary);
+    background: transparent;
+    font-size: 12px;
+    font-weight: 700;
+    cursor: pointer;
+}
+
+.task-view-tab span {
+    display: inline-grid;
+    place-items: center;
+    min-width: 20px;
+    height: 20px;
+    padding: 0 5px;
+    color: var(--text-secondary);
+    background: var(--surface-muted);
+    font-size: 11px;
+    font-variant-numeric: tabular-nums;
+}
+
+.task-view-tab.is-active {
+    border-color: var(--primary-color);
+    color: var(--primary-color);
+    background: var(--primary-soft);
+}
+
+.task-view-tab.is-active span {
+    color: var(--surface-color);
+    background: var(--primary-color);
+}
+
 .task-list-item {
     display: grid;
-    grid-template-columns: minmax(0, 1fr) auto;
+    grid-template-columns: 26px minmax(0, 1fr) auto;
     align-items: stretch;
     gap: 8px;
     min-width: 0;
+}
+
+.task-completion-control {
+    display: grid;
+    place-items: center;
+    align-self: stretch;
+    min-width: 26px;
+    cursor: pointer;
+}
+
+.task-completion-control input {
+    width: 19px;
+    height: 19px;
+    margin: 0;
+    accent-color: var(--success-color);
+    cursor: pointer;
+}
+
+.task-completion-control input:disabled {
+    cursor: not-allowed;
+    opacity: 0.55;
+}
+.task-card.completed {
+    border-color: #cbd8d0;
+    background: #f5f8f6;
+}
+
+.task-card.completed .task-card-title {
+    color: var(--text-secondary);
+    text-decoration: line-through;
+    text-decoration-thickness: 1px;
+}
+
+.task-card.completed .task-card-description,
+.task-card.completed .task-card-due-date {
+    color: var(--text-secondary);
+}
+
+.task-card:disabled {
+    cursor: default;
+}
+
+.task-card:disabled:hover {
+    transform: none;
+    box-shadow: none;
+}
+
+.task-actions {
+    display: flex;
+    flex-direction: column;
+    justify-content: stretch;
+    gap: 6px;
+}
+
+.task-edit-button {
+    min-width: 78px;
+    padding: 9px 12px;
+    border: 1px solid var(--border-color);
+    color: var(--text-primary);
+    background: var(--surface-color);
+    font-size: 12px;
+    font-weight: 700;
+    cursor: pointer;
+}
+
+.task-edit-button:hover:not(:disabled) {
+    border-color: var(--primary-color);
+    color: var(--primary-color);
+    background: var(--primary-soft);
+}
+
+.task-edit-button:disabled {
+    cursor: not-allowed;
+    opacity: 0.6;
+}
+
+.task-edit-form {
+    grid-column: 1 / -1;
+    display: grid;
+    gap: 12px;
+    padding: 14px;
+    border: 1px solid var(--border-color);
+    background: var(--surface-muted);
+}
+
+.task-edit-grid {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) minmax(140px, .45fr);
+    gap: 10px 12px;
+}
+
+.task-edit-field {
+    display: grid;
+    gap: 5px;
+    min-width: 0;
+}
+
+.task-edit-field label {
+    color: var(--text-secondary);
+    font-size: 11px;
+    font-weight: 700;
+}
+
+.task-edit-field input,
+.task-edit-field textarea {
+    width: 100%;
+    min-width: 0;
+    padding: 9px 10px;
+    border: 1px solid var(--border-color);
+    color: var(--text-primary);
+    background: var(--surface-color);
+    font-size: 12px;
+}
+
+.task-edit-field textarea {
+    min-height: 64px;
+    resize: vertical;
+}
+
+.task-edit-field input:focus-visible,
+.task-edit-field textarea:focus-visible {
+    outline: 3px solid color-mix(in srgb, var(--primary-color) 24%, transparent);
+    outline-offset: 1px;
+}
+
+.task-edit-title-field,
+.task-edit-description-field {
+    grid-column: 1 / -1;
+}
+
+.task-edit-error {
+    margin: 0;
+    color: var(--danger-color);
+    font-size: 12px;
+}
+
+.task-edit-actions {
+    display: flex;
+    justify-content: flex-end;
+    gap: 8px;
+}
+
+.task-edit-cancel-button,
+.task-edit-save-button {
+    padding: 9px 13px;
+    border: 1px solid var(--border-color);
+    font-size: 12px;
+    font-weight: 700;
+    cursor: pointer;
+}
+
+.task-edit-cancel-button {
+    color: var(--text-primary);
+    background: var(--surface-color);
+}
+
+.task-edit-save-button {
+    border-color: var(--primary-color);
+    color: var(--surface-color);
+    background: var(--primary-color);
+}
+
+.task-edit-cancel-button:disabled,
+.task-edit-save-button:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
 }
 
 .task-card {
