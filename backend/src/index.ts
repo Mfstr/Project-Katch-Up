@@ -7,7 +7,14 @@ import type { Request, Response, NextFunction } from 'express';
 import { PomodoroTimer } from './pomodoroLogic.js';
 import { addCalendar, listCalendars, deleteCalendar, syncCalendarById } from './calendarService.js';
 import { softDeleteTask, getNextTask, getAllTasks, createTask, updateTask } from './taskService.js';
-import { registerUser, loginUser } from './authService.js';
+import { registerUser, loginUser, logoutUser } from './authService.js';
+import {
+  getTimerInsights,
+  applyRecommendation,
+  recordSession,
+  getUserSessions,
+  getUserPreferences,
+} from './insightsService.js';
 import { verifyToken } from './verifyToken.js';
 import { logger, httpLogger } from './logger.js';
 
@@ -46,6 +53,101 @@ app.post('/api/timer/reset', (_req: Request, res: Response) => {
 
 app.get('/api/timer/status', (_req: Request, res: Response) => {
   res.json(timer.getStatus());
+});
+
+app.get('/api/timer/insights', async (req: Request, res: Response) => {
+  try {
+    const profileId = req.user!.id;
+    const days = req.query['days'] ? parseInt(String(req.query['days']), 10) : 7;
+    const insights = await getTimerInsights(profileId, isNaN(days) ? 7 : days);
+    res.json(insights);
+  } catch (err: unknown) {
+    logger.error({ err }, 'Error generating timer insights');
+    res.status(500).json({ error: err instanceof Error ? err.message : String(err) });
+  }
+});
+
+app.post('/api/timer/insights/apply', async (req: Request, res: Response) => {
+  try {
+    const profileId = req.user!.id;
+    const { target, value, action } = req.body ?? {};
+    const applyTarget = target ?? action?.target;
+    const applyValue = value ?? action?.value;
+
+    if (!applyTarget || applyValue === undefined) {
+      res.status(400).json({ error: 'target and value are required to apply insight recommendation.' });
+      return;
+    }
+
+    const result = await applyRecommendation(profileId, { target: applyTarget, value: applyValue });
+    res.json({ message: 'Recommendation applied successfully.', ...result });
+  } catch (err: unknown) {
+    logger.error({ err }, 'Error applying insight recommendation');
+    res.status(400).json({ error: err instanceof Error ? err.message : String(err) });
+  }
+});
+
+app.post('/api/timer/sessions', async (req: Request, res: Response) => {
+  try {
+    const profileId = req.user!.id;
+    const session = await recordSession(profileId, req.body ?? {});
+    res.status(201).json(session);
+  } catch (err: unknown) {
+    logger.error({ err }, 'Error recording pomodoro session');
+    res.status(500).json({ error: err instanceof Error ? err.message : String(err) });
+  }
+});
+
+app.get('/api/timer/sessions', async (req: Request, res: Response) => {
+  try {
+    const profileId = req.user!.id;
+    const limit = req.query['limit'] ? parseInt(String(req.query['limit']), 10) : 100;
+    const sessions = await getUserSessions(profileId, isNaN(limit) ? 100 : limit);
+    res.json(sessions);
+  } catch (err: unknown) {
+    logger.error({ err }, 'Error retrieving pomodoro sessions');
+    res.status(500).json({ error: err instanceof Error ? err.message : String(err) });
+  }
+});
+
+app.get('/api/timer/preferences', async (req: Request, res: Response) => {
+  try {
+    const profileId = req.user!.id;
+    const preferences = await getUserPreferences(profileId);
+    res.json(preferences);
+  } catch (err: unknown) {
+    logger.error({ err }, 'Error retrieving timer preferences');
+    res.status(500).json({ error: err instanceof Error ? err.message : String(err) });
+  }
+});
+
+app.put('/api/timer/preferences', async (req: Request, res: Response) => {
+  try {
+    const profileId = req.user!.id;
+    const updates = req.body ?? {};
+    const results: Record<string, unknown> = {};
+
+    for (const [key, val] of Object.entries(updates)) {
+      if (
+        [
+          'focusInterval',
+          'focus_interval',
+          'breakInterval',
+          'break_interval',
+          'pomodoroCycles',
+          'pomodoro_cycles',
+        ].includes(key)
+      ) {
+        const updateRes = await applyRecommendation(profileId, { target: key, value: Number(val) });
+        Object.assign(results, updateRes.updatedSettings);
+      }
+    }
+
+    res.json({ message: 'Preferences updated successfully.', updatedSettings: results });
+  } catch (err: unknown) {
+    logger.error({ err }, 'Error updating timer preferences');
+    res.status(400).json({ error: err instanceof Error ? err.message : String(err) });
+  }
 });
 
 // ---------------------------------------------------------------------------
@@ -226,6 +328,18 @@ app.post('/api/auth/login', async (req: Request, res: Response) => {
   } catch (err: unknown) {
     logger.warn({ err }, 'User login failed');
     res.status(401).json({ error: err instanceof Error ? err.message : String(err) });
+  }
+});
+
+app.post('/api/auth/logout', async (req: Request, res: Response) => {
+  try {
+    const authHeader = req.headers.authorization;
+    const token = authHeader?.startsWith('Bearer ') ? authHeader.split(' ')[1] : undefined;
+    const data = await logoutUser(token);
+    res.status(200).json(data);
+  } catch (err: unknown) {
+    logger.warn({ err }, 'User logout failed');
+    res.status(500).json({ error: err instanceof Error ? err.message : String(err) });
   }
 });
 

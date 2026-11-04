@@ -33,6 +33,63 @@ jest.unstable_mockModule('../../src/taskService.js', () => ({
 jest.unstable_mockModule('../../src/authService.js', () => ({
   registerUser: jest.fn().mockResolvedValue({ user: { id: '1' }, token: 'mock-jwt' }),
   loginUser: jest.fn().mockResolvedValue({ user: { id: '1' }, token: 'mock-jwt' }),
+  logoutUser: jest.fn().mockResolvedValue({ message: 'Logged out successfully' }),
+}));
+
+jest.unstable_mockModule('../../src/insightsService.js', () => ({
+  getTimerInsights: jest.fn().mockResolvedValue({
+    recommendations: [
+      {
+        id: 'shorten_break_duration',
+        type: 'break_duration',
+        title: 'Shorter Break Recommended',
+        message: 'You often end breaks early. Consider setting break interval to 3 minutes.',
+        severity: 'tip',
+        suggestedAction: { target: 'break_interval', value: 3, unit: 'minutes' },
+      },
+    ],
+    statistics: {
+      totalFocusMinutes: 100,
+      totalBreakMinutes: 15,
+      totalSessions: 5,
+      completedSessions: 4,
+      interruptedSessions: 1,
+      completionRate: 80,
+      averageFocusDurationMinutes: 25,
+      dailyBreakdown: [],
+      weekdayDistribution: {},
+    },
+    streak: {
+      currentStreak: 3,
+      longestStreak: 5,
+      lastActiveDate: '2026-11-03',
+      todayCompleted: true,
+    },
+    preferences: {
+      focusInterval: 25,
+      breakInterval: 5,
+      pomodoroCycles: 4,
+    },
+  }),
+  applyRecommendation: jest.fn().mockResolvedValue({
+    success: true,
+    updatedSettings: { breakInterval: 3 },
+  }),
+  recordSession: jest.fn().mockResolvedValue({
+    id: 1,
+    sessionType: 'focus',
+    plannedDurationSeconds: 1500,
+    actualDurationSeconds: 1500,
+    isCompleted: true,
+  }),
+  getUserSessions: jest.fn().mockResolvedValue([
+    { id: 1, sessionType: 'focus', isCompleted: true },
+  ]),
+  getUserPreferences: jest.fn().mockResolvedValue({
+    focusInterval: 25,
+    breakInterval: 5,
+    pomodoroCycles: 4,
+  }),
 }));
 
 const { createTask, updateTask, getAllTasks } = await import('../../src/taskService.js');
@@ -182,5 +239,91 @@ describe('E2E API Integration & Contract Tests', () => {
     const response = await request(app).delete('/api/tasks/abc');
     expect(response.status).toBe(400);
     expect(response.body.error).toBe('Invalid task ID');
+  });
+
+  describe('Auth Routes - Logout', () => {
+    it('POST /api/auth/logout logs out user successfully', async () => {
+      const response = await request(app)
+        .post('/api/auth/logout')
+        .set('Authorization', 'Bearer mock-token');
+
+      expect(response.status).toBe(200);
+      expect(response.body).toEqual({ message: 'Logged out successfully' });
+    });
+  });
+
+  describe('Timer Insights & Habits Routes', () => {
+    it('GET /api/timer/insights returns recommendations, statistics, and streak', async () => {
+      const response = await request(app).get('/api/timer/insights');
+
+      expect(response.status).toBe(200);
+      expect(response.body).toHaveProperty('recommendations');
+      expect(response.body).toHaveProperty('statistics');
+      expect(response.body).toHaveProperty('streak');
+      expect(response.body).toHaveProperty('preferences');
+      expect(Array.isArray(response.body.recommendations)).toBe(true);
+      expect(response.body.recommendations[0].id).toBe('shorten_break_duration');
+      expect(response.body.streak.currentStreak).toBe(3);
+    });
+
+    it('POST /api/timer/insights/apply validates required target and value', async () => {
+      const response = await request(app)
+        .post('/api/timer/insights/apply')
+        .send({});
+
+      expect(response.status).toBe(400);
+      expect(response.body.error).toContain('target and value are required');
+    });
+
+    it('POST /api/timer/insights/apply successfully applies recommended setting', async () => {
+      const response = await request(app)
+        .post('/api/timer/insights/apply')
+        .send({ target: 'break_interval', value: 3 });
+
+      expect(response.status).toBe(200);
+      expect(response.body).toHaveProperty('success', true);
+      expect(response.body).toHaveProperty('updatedSettings');
+    });
+
+    it('POST /api/timer/sessions records a completed pomodoro session', async () => {
+      const newSession = {
+        sessionType: 'focus',
+        plannedDurationSeconds: 1500,
+        actualDurationSeconds: 1500,
+        isCompleted: true,
+      };
+
+      const response = await request(app)
+        .post('/api/timer/sessions')
+        .send(newSession);
+
+      expect(response.status).toBe(201);
+      expect(response.body).toHaveProperty('sessionType', 'focus');
+    });
+
+    it('GET /api/timer/sessions returns user session history', async () => {
+      const response = await request(app).get('/api/timer/sessions');
+
+      expect(response.status).toBe(200);
+      expect(Array.isArray(response.body)).toBe(true);
+      expect(response.body[0].sessionType).toBe('focus');
+    });
+
+    it('GET /api/timer/preferences returns user intervals', async () => {
+      const response = await request(app).get('/api/timer/preferences');
+
+      expect(response.status).toBe(200);
+      expect(response.body).toHaveProperty('focusInterval', 25);
+      expect(response.body).toHaveProperty('breakInterval', 5);
+    });
+
+    it('PUT /api/timer/preferences updates user intervals', async () => {
+      const response = await request(app)
+        .put('/api/timer/preferences')
+        .send({ break_interval: 3, focus_interval: 20 });
+
+      expect(response.status).toBe(200);
+      expect(response.body).toHaveProperty('updatedSettings');
+    });
   });
 });

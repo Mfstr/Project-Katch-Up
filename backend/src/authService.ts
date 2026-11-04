@@ -19,3 +19,21 @@ export const loginUser = async (email: string, password: string) => {
   if (error) throw new Error(`Login failed: ${error.message}`);
   return data;
 };
+
+export const logoutUser = async (token?: string) => {
+  if (token && typeof (supabase.auth as { admin?: { signOut?: (jwt: string) => Promise<{ error: Error | null }> } }).admin?.signOut === 'function') {
+    try {
+      const { error } = await (supabase.auth as unknown as { admin: { signOut: (jwt: string) => Promise<{ error: Error | null }> } }).admin.signOut(token);
+      if (!error) {
+        return { message: 'Logged out successfully' };
+      }
+    } catch {
+      // Fall back to client signOut
+    }
+  }
+
+  const { error } = await supabase.auth.signOut();
+  if (error) throw new Error(`Logout failed: ${error.message}`);
+  return { message: 'Logged out successfully' };
+};
+
