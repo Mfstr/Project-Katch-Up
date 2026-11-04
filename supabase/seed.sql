@@ -63,7 +63,8 @@ values
 );
 
 insert into public.profiles (id) values
-('a1111111-1111-1111-1111-111111111111');
+('a1111111-1111-1111-1111-111111111111')
+on conflict (id) do nothing;
 
 insert into public.calendars (profile_id, name, description, ical_url) values
 ('a1111111-1111-1111-1111-111111111111', 'Work Calendar', 'My work meetings', 'https://example.com/work.ics'),
