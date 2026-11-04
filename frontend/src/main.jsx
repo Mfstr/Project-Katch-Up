@@ -16,7 +16,7 @@ createRoot(document.getElementById("root")).render(
     <StrictMode>
         <BrowserRouter>
             <Routes>
-                <Route path="/" element={<ProtectedRoute><Home /></ProtectedRoute>} />
+                <Route path="/" element={<Navigate to="/login" replace />} />
                 <Route path="/login" element={<Authorize />} />
                 <Route path="/register" element={<Authorize />} />
                 <Route path="/dashboard" element={<ProtectedRoute><Home /></ProtectedRoute>} />

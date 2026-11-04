@@ -18,6 +18,7 @@ export default function SettingsPanel({
     isCreatingTask = false,
     taskError = '',
     taskNotice = '',
+    taskNoticeFading = false,
     onTaskManagerToggle = () => {},
     onTaskManagerClose = () => {},
     onTaskFormChange = () => {},
@@ -96,7 +97,7 @@ export default function SettingsPanel({
                         </p>
                     )}
                     {taskNotice && (
-                        <p className="task-manager-feedback-success" role="status">
+                        <p className={`task-manager-feedback is-success auto-dismiss-notice${taskNoticeFading ? ' is-fading' : ''}`} role="status">
                             {taskNotice}
                         </p>
                     )}

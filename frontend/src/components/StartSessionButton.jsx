@@ -7,7 +7,7 @@ export default function StartSessionButton({ onClick, loading = false, disabled 
             disabled={disabled || loading}
         >
             <span>
-                {loading ? 'Loading next task...' : 'Start Session'}
+                {loading ? 'Starting session...' : 'Start Session'}
             </span>
         </button>
     );
