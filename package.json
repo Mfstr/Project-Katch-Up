@@ -14,7 +14,9 @@
     "format": "prettier --write \".\"",
     "format:check": "prettier --check \".\"",
     "test:e2e": "playwright test",
-    "test:e2e:ui": "playwright test --ui"
+    "test:e2e:ui": "playwright test --ui",
+    "test:load:ramp": "k6 run backend/tests/load-tests/ramp-test.js",
+    "test:load:spike": "k6 run backend/tests/load-tests/spike-test.js"
   },
   "repository": {
     "type": "git",
