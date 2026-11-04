@@ -66,7 +66,7 @@ button, a, .task-card, .refresh-tasks, .timer-controls button, .start-session, .
 .home-page > main {
     width: 100%;
     height: 100%;
-    min-height: 100vh;
+    min-height: 0;
     margin: 0;
 }
 
@@ -79,7 +79,7 @@ button, a, .task-card, .refresh-tasks, .timer-controls button, .start-session, .
 .smart-focus-ui {
     display: grid;
     grid-template-columns: minmax(0, 1fr) minmax(0, .95fr) 108px;
-    grid-template-rows: minmax(0, 1fr) clamp(64px, 8vh, 82px);
+    grid-template-rows: minmax(0, 1fr) auto;
     grid-template-areas: 'timer tasks settings' 'session session settings';
     gap: clamp(12px, 1.5vw, 22px);
     align-items: stretch;
@@ -89,6 +89,7 @@ button, a, .task-card, .refresh-tasks, .timer-controls button, .start-session, .
     height: 100dvh;
     min-height: 0;
     padding: clamp(16px, 2.3vw, 28px);
+    overflow: hidden;
     border: 0;
     background-color: var(--surface-color);
     background-size: cover;
@@ -139,6 +140,53 @@ button, a, .task-card, .refresh-tasks, .timer-controls button, .start-session, .
 .task-list {
     display: grid;
     gap: 13px;
+}
+
+.dashboard-youtube-music {
+    margin-top: clamp(22px, 2.4vh, 30px);
+    padding-top: 18px;
+    border-top: 1px solid var(--border-color);
+}
+
+.dashboard-youtube-music-header {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    margin-bottom: 12px;
+}
+
+.dashboard-youtube-music-header h2 {
+    margin: 0;
+    color: var(--text-primary);
+    font: 600 clamp(17px, 1.35vw, 20px)/1.25 var(--font-heading);
+}
+
+.dashboard-youtube-music-header p {
+    margin: 0;
+    color: var(--text-secondary);
+    font-size: 12px;
+    line-height: 1.45;
+}
+
+.youtube-player-frame {
+    position: relative;
+    width: 100%;
+    min-width: 200px;
+    min-height: 200px;
+    aspect-ratio: 16 / 9;
+    overflow: hidden;
+    border: 1px solid var(--glass-border);
+    background: #111;
+    box-shadow: var(--glass-shadow);
+}
+
+.youtube-player-frame iframe {
+    position: absolute;
+    inset: 0;
+    display: block;
+    width: 100%;
+    height: 100%;
+    border: 0;
 }
 
 .task-list-item {
@@ -475,6 +523,29 @@ button.settings-shortcut {
 .settings-shortcut.is-active, button.settings-shortcut:hover {
     color: var(--surface-color);
     background: #ed970d;
+}
+
+.settings-panel button.settings-youtube-trigger {
+    font-size: 27px;
+    transition: color 160ms ease, background-color 160ms ease, border-color 160ms ease;
+}
+
+.settings-panel button.settings-youtube-trigger.is-active {
+    border: var(--primary-color);
+    color: var(--primary-color);
+    background: var(--primary-soft);
+}
+
+.settings-panel button.settings-youtube-trigger:not(.is-active) {
+    border-color: var(--border-color);
+    color: var(--text-secondary);
+    background: var(--surface-muted);
+}
+
+.settings-panel button.settings-youtube-trigger:not(.is-active):hover {
+    border-color: var(--primary-color);
+    color: var(--primary-color);
+    background: var(--primary-soft);
 }
 
 .background-selector {
