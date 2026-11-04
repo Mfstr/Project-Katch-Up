@@ -5,7 +5,7 @@ export interface ReadinessStatus {
   status: 'ready' | 'unavailable';
   database: 'connected' | 'disconnected';
   timestamp: string;
-  error?: string;
+  error?: string | undefined;
 }
 
 export async function pingSupabase(): Promise<{ ok: boolean; error?: string }> {
