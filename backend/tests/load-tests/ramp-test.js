@@ -2,12 +2,14 @@ import http from 'k6/http';
 import { check, sleep } from 'k6';
 
 export const options = {
-  vus: 100,             // Edit this to change number of virtual users
-  duration: '30s',
+  stages: [
+    { duration: '10s', target: 20 },   // Warm-up
+    { duration: '20s', target: 100 },  // Gradual ramp-up to 100 users
+    { duration: '30s', target: 100 },  // Hold steady
+    { duration: '10s', target: 0 },    // Ramp down
+  ],
   thresholds: {
     http_req_duration: ['p(95)<500'],
-    // Allow 401s by configuring failure rate to only trigger on actual server errors (5xx)
-    // Or remove the http_req_failed threshold if 401 is expected behavior for unauth load testing
   },
 };
 
