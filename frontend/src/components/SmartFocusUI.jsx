@@ -97,6 +97,14 @@ export default function SmartFocusUI() {
         }
     });
 
+    const [isYoutubePlayerEnabled, setYoutubePlayerEnabled] = useState(() => {
+        try {
+            return window.localStorage.getItem('project-katchup-youtube-player-enabled') === 'true';
+        } catch {
+            return false;
+        }
+    });
+
     const updateSessionStarted = useCallback((started) => {
         setHasStartedSession(started);
         try {
@@ -311,6 +319,19 @@ export default function SmartFocusUI() {
         }
     };
 
+    const handleYoutubePlayerToggle = () => {
+        const nextEnabled = !isYoutubePlayerEnabled;
+        setYoutubePlayerEnabled(nextEnabled);
+        try {
+            window.localStorage.setItem(
+                'project-katchup-youtube-player-enabled',
+                String(nextEnabled),
+            );
+        } catch {
+            // Youtube player toggle will still work if the current page's storage is unavailable.
+        }
+    };
+
     const handleSelectTask = (selectedTask) => {
         if (hasStartedSession) return;
         
@@ -464,11 +485,14 @@ export default function SmartFocusUI() {
                 taskActionError={taskActionError}
                 taskActionNotice={taskActionNotice}
                 taskActionNoticeFading={isTaskActionNoticeFading}
+                isYoutubePlayerEnabled={isYoutubePlayerEnabled}
             />
 
             <SettingsPanel 
                 background={background}
                 onBackgroundChange={handleBackgroundChange}
+                isYoutubePlayerEnabled={isYoutubePlayerEnabled}
+                onYoutubePlayerToggle={handleYoutubePlayerToggle}
                 isTaskManagerOpen={isTaskManagerOpen}
                 taskForm={taskForm}
                 isCreatingTask={isCreatingTask}

@@ -13,6 +13,8 @@ const BACKGROUNDS = [
 export default function SettingsPanel({
     background,
     onBackgroundChange,
+    isYoutubePlayerEnabled = true,
+    onYoutubePlayerToggle = () => {},
     isTaskManagerOpen = false,
     taskForm = EMPTY_TASK_FORM,
     isCreatingTask = false,
@@ -38,6 +40,15 @@ export default function SettingsPanel({
                 title="Change Background"
             >
                 <span>B</span>
+            </button>
+
+            <button
+                type="button"
+                className={`settings-shortcut settings-youtube-trigger${isYoutubePlayerEnabled ? ' is-active' : ''}`}
+                onClick={onYoutubePlayerToggle}
+                title={isYoutubePlayerEnabled ? 'Turn off YouTube music player' : 'Turn on YouTube music player'}
+            >
+                <span>Y</span>
             </button>
 
             <button

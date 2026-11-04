@@ -31,6 +31,7 @@ export default function Dashboard({
     taskActionError = '',
     taskActionNotice = '',
     taskActionNoticeFading = false,
+    isYoutubePlayerEnabled = true,
 }) {
     const [tasks, setTasks] = useState([]);
     const [isLoading, setLoading] = useState(false);
@@ -140,6 +141,26 @@ export default function Dashboard({
                     );
                 })}
             </div>
+
+            {isYoutubePlayerEnabled && (
+                <section className="dashboard-youtube-music">
+                    <div className="dashboard-youtube-music-header">
+                        <h2 id="dashboard-youtube-music-heading">Lo-fi YouTube Study Stream</h2>
+                        <p>Play background music while you work on your tasks.</p>
+                    </div>
+
+                    <div className="youtube-player-frame">
+                        <iframe
+                            src="https://www.youtube-nocookie.com/embed/qGohtGC5Rtk?rel=0&playsinline=1"
+                            title="Study With Me 📚 Pomodoro"
+                            loading="lazy"
+                            referrerPolicy='strict-origin-when-cross-origin'
+                            allow="accelerometer; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
+                            allowFullScreen
+                        />
+                    </div>
+                </section>
+            )}
         </section>
     );
 }
