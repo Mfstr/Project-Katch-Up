@@ -21,7 +21,7 @@ function formatDueDate(value) {
     return date.toLocaleDateString();
 }
 
-export default function Dashboard({ selectedTask, onSelectTask }) {
+export default function Dashboard({ selectedTask, onSelectTask, refreshSignal = 0, onDeleteTask, deletingTaskId = null, taskActionError = '', taskActionNotice = '' }) {
     const [tasks, setTasks] = useState([]);
     const [isLoading, setLoading] = useState(false);
     const [error, setError] = useState('');
@@ -45,7 +45,7 @@ export default function Dashboard({ selectedTask, onSelectTask }) {
         }
     }, []);
 
-    useEffect(() => { loadTasks(); }, [loadTasks]);
+    useEffect(() => { loadTasks(); }, [loadTasks, refreshSignal]);
 
     return (
         <section className="dashboard">
@@ -70,37 +70,61 @@ export default function Dashboard({ selectedTask, onSelectTask }) {
                 </div>
             )}
 
+            {taskActionError && (
+                <div className="dashboard-error" role="alert">
+                    {taskActionError}
+                </div>
+            )}
+
+            {taskActionNotice && (
+                <div className="dashboard-notice" role="status">
+                    {taskActionNotice}
+                </div>
+            )}
+
             {!isLoading && !error && tasks.length === 0 && (
                 <p className="empty-state">No incomplete tasks were found.</p>
             )}
 
             <div className="task-list" role="list">
-                {tasks.map((task) => {
+                {tasks.map((task, index) => {
                     const dueDate = formatDueDate(task.dueDate);
-                    const isSelected = selectedTask?.id === task.id;
+                    const isSelected = task.id != null && String(selectedTask?.id) === String(task.id);
+                    const isDeleting = String(deletingTaskId) === String(task.id) && deletingTaskId !== null;
+                    const taskKey = task.id ?? `task-${index}`;
 
                     return (
-                        <button
-                            key={task.id}
-                            type="button"
-                            className={`task-card${isSelected ? ' selected' : ''}`}
-                            onClick={() => onSelectTask?.(task)}
-                            role="listitem"
-                            >
-                                <span className="task-card-title">{task.title}</span>
+                        <div className="task-list-item" key={taskKey} role="listitem">
+                            <button
+                                type="button"
+                                className={`task-card${isSelected ? ' selected' : ''}`}
+                                onClick={() => onSelectTask?.(task)}
+                                >
+                                    <span className="task-card-title">{task.title}</span>
 
-                                {task.description && (
-                                    <span className="task-card-description">
-                                        {task.description}
-                                    </span>
-                                )}
+                                    {task.description && (
+                                        <span className="task-card-description">
+                                            {task.description}
+                                        </span>
+                                    )}
 
-                                {dueDate && (
-                                    <span className="task-card-due-date">
-                                        Due {dueDate}
-                                    </span>
-                                )}
+                                    {dueDate && (
+                                        <span className="task-card-due-date">
+                                            Due {dueDate}
+                                        </span>
+                                    )}
                             </button>
+
+                            <button
+                                type="button"
+                                className="task-delete-button"
+                                onClick={() => onDeleteTask?.(task)}
+                                disabled={!onDeleteTask || task.id == null || isDeleting}
+                                title={`Delete ${task.title}`}
+                            >
+                                {isDeleting ? 'Deleting...' : 'Delete'}
+                            </button>
+                        </div>
                     );
                 })}
             </div>

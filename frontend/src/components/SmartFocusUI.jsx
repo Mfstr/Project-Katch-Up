@@ -1,6 +1,8 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 
 import {
+    createTask,
+    deleteTask,
     getNextTask,
     getTimerStatus,
     pauseTimer,
@@ -16,6 +18,7 @@ import SettingsPanel from './SettingsPanel.jsx';
 
 const DEFAULT_FOCUS_SECONDS = 20 * 60;
 const SHORT_BREAK_SECONDS = 5 * 60;
+const EMPTY_TASK_FORM = { title: '', description: '', dueDate: '' };
 
 function normalizeTasks(payload) {
     const task = payload?.task ?? payload?.data ?? payload;
@@ -44,6 +47,15 @@ export default function SmartFocusUI() {
     const [message, setMessage] = useState('');
     const [error, setError] = useState('');
     const [sessionCompleted, setSessionCompleted] = useState(false);
+    const [taskRefreshSignal, setTaskRefreshSignal] = useState(0);
+    const [isTaskManagerOpen, setTaskManagerOpen] = useState(false);
+    const [taskForm, setTaskForm] = useState(EMPTY_TASK_FORM);
+    const [isCreatingTask, setCreatingTask] = useState(false);
+    const [deletingTaskId, setDeletingTaskId] = useState(null);
+    const [taskError, setTaskError] = useState('');
+    const [taskNotice, setTaskNotice] = useState('');
+    const [taskActionError, setTaskActionError] = useState('');
+    const [taskActionNotice, setTaskActionNotice] = useState('');
     const chimeRef = useRef(null);
     const completionHandledRef = useRef(false);
     const notificationPermRequestRef = useRef(false);
@@ -245,6 +257,98 @@ export default function SmartFocusUI() {
         setError('');
     };
 
+    const handleTasksChanged = useCallback((deletedTaskId = null) => {
+        setTaskRefreshSignal((currentSignal) => currentSignal + 1);
+
+        if (
+            deletedTaskId !== null &&
+            String(task?.id) === String(deletedTaskId) &&
+            !isActive
+        ) {
+            setTask(null);
+        }
+    }, [isActive, task?.id]);
+
+    const handleTaskManagerToggle = () => {
+        setTaskManagerOpen((isOpen) => !isOpen);
+        setTaskNotice('');
+        setTaskError('');
+    };
+
+    const handleTaskManagerClose = () => setTaskManagerOpen(false);
+
+    const handleTaskFormChange = (field, value) => {
+        setTaskForm((currentForm) => ({ ...currentForm, [field]: value }));
+    };
+
+    const handleCreateTask = async (event) => {
+        event.preventDefault();
+
+        const title = taskForm.title.trim();
+        if (!title) {
+            setTaskError('Enter a title for your task.');
+            return;
+        }
+
+        setCreatingTask(true);
+        setTaskError('');
+        setTaskNotice('');
+
+        try {
+            await createTask({
+                title,
+                description: taskForm.description.trim() || null,
+                due_date: taskForm.dueDate || null,
+            });
+
+            setTaskForm(EMPTY_TASK_FORM);
+            setTaskNotice(`Added "${title}" to your tasks.`);
+            setTaskRefreshSignal((currentSignal) => currentSignal + 1);
+        } catch (requestError) {
+            setTaskError(
+                requestError instanceof Error
+                    ? requestError.message
+                    : 'Unable to create your task.',
+            );
+        } finally {
+            setCreatingTask(false);
+        }
+    };
+
+    const handleDeleteTask = async (tasktoDelete) => {
+        const taskId = tasktoDelete?.id ?? tasktoDelete?.taskId;
+        const taskTitle = tasktoDelete?.title ?? tasktoDelete?.name ?? 'Untitled task';
+        
+        if (taskId == null) {
+            setTaskActionError('This task cannot be deleted because it has no task ID.');
+            return;
+        }
+        
+        const confirmed = window.confirm(
+            `Are you sure you want to delete "${taskTitle}"? This will remove it from your active task list.`,
+        );
+
+        if (!confirmed) return;
+
+        setDeletingTaskId(taskId);
+        setTaskActionError('');
+        setTaskActionNotice('');
+
+        try {
+            await deleteTask(taskId);
+            setTaskActionNotice(`Deleted "${taskTitle}".`);
+            handleTasksChanged(taskId);
+        } catch (requestError) {
+            setTaskActionError(
+                requestError instanceof Error
+                ? requestError.message
+                : 'Unable to delete your task.',
+            );
+        } finally {
+            setDeletingTaskId(null);
+        }
+    };
+
     const handleStart = () => {
         completionHandledRef.current = false;
         setSessionCompleted(false);
@@ -284,11 +388,25 @@ export default function SmartFocusUI() {
             <Dashboard
                 selectedTask={task}
                 onSelectTask={handleSelectTask}
+                refreshSignal={taskRefreshSignal}
+                onDeleteTask={handleDeleteTask}
+                deletingTaskId={deletingTaskId}
+                taskActionError={taskActionError}
+                taskActionNotice={taskActionNotice}
             />
 
             <SettingsPanel 
                 background={background}
                 onBackgroundChange={handleBackgroundChange}
+                isTaskManagerOpen={isTaskManagerOpen}
+                taskForm={taskForm}
+                isCreatingTask={isCreatingTask}
+                taskError={taskError}
+                taskNotice={taskNotice}
+                onTaskManagerToggle={handleTaskManagerToggle}
+                onTaskManagerClose={handleTaskManagerClose}
+                onTaskFormChange={handleTaskFormChange}
+                onCreateTask={handleCreateTask}
             />
             
             <div className="smart-focus-session-button">

@@ -71,7 +71,7 @@ button, a, .task-card, .refresh-tasks, .timer-controls button, .start-session, .
 .smart-focus-ui {
     display: grid;
     grid-template-columns: minmax(0, 1fr) minmax(0, .95fr) 92px;
-    grid-template-areas: 'timer tasks setting' 'session session settings' 'notice notice settings';
+    grid-template-areas: 'timer tasks settings' 'session session settings' 'notice notice settings';
     gap: 14px;
     align-items: stretch;
     position: relative;
@@ -125,6 +125,14 @@ button, a, .task-card, .refresh-tasks, .timer-controls button, .start-session, .
     gap: 10px;
 }
 
+.task-list-item {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) auto;
+    align-items: stretch;
+    gap: 8px;
+    min-width: 0;
+}
+
 .task-card {
     display: flex;
     flex-direction: column;
@@ -173,6 +181,35 @@ button, a, .task-card, .refresh-tasks, .timer-controls button, .start-session, .
     font-weight: 600;
 }
 
+.task-delete-button {
+    align-self: stretch;
+    min-width: 72px;
+    padding: 8px 12px;
+    border: 1px solid #e8aab3;
+    color: var(--danger-color);
+    background: #fff7f8;
+    font-size: 11px;
+    font-weight: 700;
+    cursor: pointer;
+    transition: color .15s ease, background-color .15s ease, border-color .15s ease;
+}
+
+.task-delete-button:hover:not(:disabled) {
+    border-color: var(--danger-color);
+    color: var(--surface-color);
+    background: var(--danger-color);
+}
+
+.task-delete-button:disabled {
+    opacity: 0.65;
+    cursor: not-allowed;
+}
+
+.task-delete-button:focus-visible {
+    outline: 3px solid #d6455d40;
+    outline-offset: 2px;
+}
+
 .empty-state {
     padding: 22px 14px;
     color: var(--task-color);
@@ -190,6 +227,15 @@ button, a, .task-card, .refresh-tasks, .timer-controls button, .start-session, .
 
 .dashboard-error {
     margin-bottom: 14px;
+}
+
+.dashboard-notice {
+    margin-bottom: 14px;
+    padding: 10px 12px;
+    border: 1px solid var(--focus-message-border);
+    color: var(--success-color);
+    background: var(--focus-message-background);
+    font-size: 12px;
 }
 
 .pomodoro-timer {
@@ -351,7 +397,7 @@ button:disabled {
 .settings-panel {
     grid-area: settings;
     position: relative;
-    z-index: 3;
+    z-index: 20;
     display: flex;
     flex-direction: column;
     align-items: center;
@@ -481,4 +527,151 @@ button.settings-shortcut {
 .auth-page a {
     color: var(--primary-color);
     font-weight: 600;
+}
+
+.settings-task-trigger {
+    border-color: var(--task-color);
+    color: var(--task-color);
+    background: #f2f7ff;
+}
+
+.settings-task-trigger.is-active,
+button.settings-task-trigger:hover {
+    color: var(--surface-color);
+    background: var(--task-color);
+}
+
+.task-manager-panel {
+    position: absolute;
+    top: 0;
+    right: calc(100% + 10px);
+    z-index: 10;
+    width: min(360px, calc(100vw - 40px));
+    max-height: min(82vh, 720px);
+    overflow-y: auto;
+    padding: 18px;
+    border: 1px solid var(--navigation-color);
+    color: var(--text-primary);
+    background: var(--surface-color);
+    box-shadow: 0 12px 30px var(--glass-shadow);
+    text-align: left;
+}
+
+.task-manager-header {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 12px;
+}
+
+.task-manager-header {
+    margin-bottom: 16px;
+}
+
+.task-manager-header h2 {
+    margin: 0 0 5px;
+    color: var(--text-primary);
+    font: 700 19px/1.2 var(--font-heading);
+}
+
+.task-manager-header p {
+    margin: 0;
+    color: var(--text-secondary);
+    font-size: 11px;
+    line-height: 1.45;
+}
+
+.task-manager-close {
+    flex: 0 0 30px;
+    width: 30px;
+    height: 30px;
+    padding: 0;
+    border: 1px solid var(--border-color);
+    color: var(--text-secondary);
+    background: var(--surface-muted);
+    font-size: 22px;
+    line-height: 1;
+    cursor: pointer;
+}
+
+.task-create-form {
+    display: grid;
+    gap: 8px;
+}
+
+.task-create-form label {
+    margin-top: 4px;
+    color: var(--text-secondary);
+    font-size: 11px;
+    font-weight: 700;
+}
+
+.task-create-form label span {
+    color: #8a928d;
+    font-weight: 400;
+}
+
+.task-create-form input,
+.task-create-form textarea {
+    width: 100%;
+    min-width: 0;
+    padding: 9px 10px;
+    border: 1px solid var(--border-color);
+    color: var(--text-primary);
+    background: var(--surface-muted);
+    font-size: 12px;
+}
+
+.task-create-form input {
+    min-height: 38px;
+}
+
+.task-create-form textarea {
+    min-height: 62px;
+    resize: vertical;
+}
+
+.task-create-form input:focus,
+.task-create-form textarea:focus {
+    border-color: var(--primary-color);
+    outline: 2px solid #218b4326;
+}
+
+.task-manager-add-button {
+    min-height: 40px;
+    margin-top: 5px;
+    padding: 9px 12px;
+    border: 1px solid transparent;
+    color: var(--surface-color);
+    background: var(--primary-color);
+    font-size: 12px;
+    font-weight: 700;
+    cursor: pointer;
+}
+
+.task-manager-feedback {
+    margin: 0 0 10px;
+    padding: 9px 10px;
+    font-size: 11px;
+    line-height: 1.45;
+}
+
+.task-manager-feedback.is-error {
+    border: 1px solid var(--danger-color);
+    color: var(--danger-color);
+    background: var(--error-background);
+}
+
+.task-manager-feedback.is-success {
+    border: 1px solid var(--focus-message-border);
+    color: var(--success-color);
+    background: var(--focus-message-background);
+}
+
+.task-manager-panel button:focus-visible,
+.settings-panel button:focus-visible,
+.task-create-form input:focus-visible,
+.task-create-form textarea:focus-visible {
+    outline: 3px solid #218b4340;
+    outline-offset: 2px;
 }
