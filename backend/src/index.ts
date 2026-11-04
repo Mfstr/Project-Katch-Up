@@ -9,6 +9,7 @@ import { addCalendar, listCalendars, deleteCalendar, syncCalendarById } from './
 import { softDeleteTask, getNextTask, getAllTasks, createTask, updateTask } from './taskService.js';
 import { registerUser, loginUser } from './authService.js';
 import { verifyToken } from './verifyToken.js';
+import { featureFlag } from './featureFlag.js';
 import { logger, httpLogger } from './logger.js';
 
 // ===========================================================================
@@ -65,6 +66,7 @@ app.get('/api/timer/status', (_req: Request, res: Response) => {
 // ---------------------------------------------------------------------------
 // Calendar Management Routes
 // ---------------------------------------------------------------------------
+app.use('/api/calendars', featureFlag('ENABLE_CALENDAR'));
 app.use('/api/calendars', verifyToken);
 
 app.get('/api/calendars', async (_req: Request, res: Response) => {
@@ -254,11 +256,12 @@ app.use((err: unknown, _req: Request, res: Response, _next: NextFunction) => {
   }
 
   const message = err instanceof Error ? err.message : String(err);
-  
+
   // Extract custom status codes (e.g., 400, 404, 401) or default to 500
-  const rawStatus = typeof err === 'object' && err !== null && 'status' in err
-    ? Number((err as Record<string, unknown>).status)
-    : 500;
+  const rawStatus =
+    typeof err === 'object' && err !== null && 'status' in err
+      ? Number((err as Record<string, unknown>).status)
+      : 500;
 
   const statusCode = !isNaN(rawStatus) && rawStatus >= 400 && rawStatus < 600 ? rawStatus : 500;
 
