@@ -622,8 +622,7 @@ export async function applyRecommendation(
 
   const { error } = await supabase
     .from('profiles')
-    .update({ [dbField]: numericValue })
-    .eq('id', profileId);
+    .upsert({ id: profileId, [dbField]: numericValue }, { onConflict: 'id' });
 
   if (error) {
     throw new Error(`Failed to update profile settings: ${error.message}`);
@@ -660,31 +659,62 @@ export async function recordSession(
     ? new Date(input.completedAt).toISOString()
     : new Date().toISOString();
 
-  const sessionPayload = {
+  const sessionPayload: Record<string, unknown> = {
     profile_id: profileId,
     session_type: input.sessionType ?? 'focus',
     planned_duration_seconds: plannedSeconds,
     actual_duration_seconds: actualSeconds,
     is_interrupted: isInterrupted,
-    is_completed: !isInterrupted,
-    duration_minutes: Math.round(actualSeconds / 60),
     started_at: startedAt,
     completed_at: completedAt,
-    ended_at: completedAt,
-    task_id: input.taskId ?? null,
   };
 
-  const { data, error } = await supabase
+  if (input.taskId !== undefined && input.taskId !== null) {
+    sessionPayload['task_id'] = input.taskId;
+  }
+
+  let { data, error } = await supabase
     .from('pomodoro_sessions')
     .insert(sessionPayload)
     .select()
     .single();
 
+  // If column error occurs (e.g. task_id or planned_duration_seconds missing in unmigrated table), retry with fallback
+  if (error && error.message && error.message.includes('column') && error.message.includes('does not exist')) {
+    if (sessionPayload['task_id'] !== undefined && error.message.includes('task_id')) {
+      delete sessionPayload['task_id'];
+      const retryResult = await supabase
+        .from('pomodoro_sessions')
+        .insert(sessionPayload)
+        .select()
+        .single();
+      data = retryResult.data;
+      error = retryResult.error;
+    } else if (error.message.includes('planned_duration_seconds')) {
+      const legacyPayload = {
+        profile_id: profileId,
+        session_type: input.sessionType ?? 'focus',
+        duration_minutes: Math.round(actualSeconds / 60),
+        is_completed: !isInterrupted,
+        started_at: startedAt,
+        ended_at: completedAt,
+        task_id: input.taskId ?? null,
+      };
+      const retryResult = await supabase
+        .from('pomodoro_sessions')
+        .insert(legacyPayload)
+        .select()
+        .single();
+      data = retryResult.data;
+      error = retryResult.error;
+    }
+  }
+
   if (error) {
     throw new Error(`Failed to record pomodoro session: ${error.message}`);
   }
 
-  return normalizeSessionRow(data as Record<string, unknown>);
+  return normalizeSessionRow((data || sessionPayload) as Record<string, unknown>);
 }
 
 /**

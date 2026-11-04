@@ -7,6 +7,15 @@ export const registerUser = async (email: string, password: string) => {
   });
 
   if (error) throw new Error(`Registration failed: ${error.message}`);
+
+  if (data?.user?.id && typeof supabase.from === 'function') {
+    try {
+      await supabase.from('profiles').upsert({ id: data.user.id }, { onConflict: 'id' });
+    } catch {
+      // In case database triggers or RLS handle profile provisioning
+    }
+  }
+
   return data;
 };
 

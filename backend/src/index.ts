@@ -24,35 +24,89 @@ app.use(cors());
 app.use(express.json());
 app.use(httpLogger);
 
-const timer = new PomodoroTimer();
+const userTimers = new Map<string, PomodoroTimer>();
+
+export function getTimerForUser(profileId: string): PomodoroTimer {
+  let userTimer = userTimers.get(profileId);
+  if (!userTimer) {
+    userTimer = new PomodoroTimer();
+    userTimers.set(profileId, userTimer);
+  }
+  return userTimer;
+}
 
 // ---------------------------------------------------------------------------
 // Pomodoro Timer Routes
 // ---------------------------------------------------------------------------
 app.use('/api/timer', verifyToken);
 
-app.post('/api/timer/start', (_req: Request, res: Response) => {
-  const endTime = timer.start();
+app.post('/api/timer/start', (req: Request, res: Response) => {
+  const profileId = req.user?.id ?? 'default';
+  const userTimer = getTimerForUser(profileId);
+  const { taskId, durationSeconds } = req.body ?? {};
+  const endTime = userTimer.start({
+    taskId: typeof taskId === 'number' ? taskId : undefined,
+    durationSeconds: typeof durationSeconds === 'number' ? durationSeconds : undefined,
+  });
   res.json({ message: 'Timer started.', endTime });
 });
 
-app.post('/api/timer/pause', (_req: Request, res: Response) => {
-  const remainingSeconds = timer.pause();
+app.post('/api/timer/pause', (req: Request, res: Response) => {
+  const profileId = req.user?.id ?? 'default';
+  const userTimer = getTimerForUser(profileId);
+  const remainingSeconds = userTimer.pause();
   res.json({ message: 'Timer paused.', remainingSeconds });
 });
 
-app.post('/api/timer/complete', (_req: Request, res: Response) => {
-  const nextPhase = timer.complete();
-  res.json({ message: 'Phase complete.', nextPhase });
+app.post('/api/timer/complete', async (req: Request, res: Response) => {
+  try {
+    const profileId = req.user?.id ?? 'default';
+    const userTimer = getTimerForUser(profileId);
+    const nextPhase = userTimer.complete();
+    const completedSession = userTimer.getLastCompletedSession();
+
+    let recordedSession = null;
+    if (completedSession && profileId !== 'default') {
+      try {
+        recordedSession = await recordSession(profileId, completedSession);
+      } catch (dbErr) {
+        logger.error({ err: dbErr }, 'Failed to record completed session in database');
+      }
+    }
+
+    res.json({ message: 'Phase complete.', nextPhase, session: recordedSession });
+  } catch (err: unknown) {
+    logger.error({ err }, 'Error completing timer phase');
+    res.status(500).json({ error: err instanceof Error ? err.message : String(err) });
+  }
 });
 
-app.post('/api/timer/reset', (_req: Request, res: Response) => {
-  timer.reset();
-  res.json({ message: 'Timer reset.' });
+app.post('/api/timer/reset', async (req: Request, res: Response) => {
+  try {
+    const profileId = req.user?.id ?? 'default';
+    const userTimer = getTimerForUser(profileId);
+    const interruptedSession = userTimer.reset();
+
+    let recordedSession = null;
+    if (interruptedSession && profileId !== 'default') {
+      try {
+        recordedSession = await recordSession(profileId, interruptedSession);
+      } catch (dbErr) {
+        logger.error({ err: dbErr }, 'Failed to record interrupted session in database');
+      }
+    }
+
+    res.json({ message: 'Timer reset.', session: recordedSession });
+  } catch (err: unknown) {
+    logger.error({ err }, 'Error resetting timer');
+    res.status(500).json({ error: err instanceof Error ? err.message : String(err) });
+  }
 });
 
-app.get('/api/timer/status', (_req: Request, res: Response) => {
-  res.json(timer.getStatus());
+app.get('/api/timer/status', (req: Request, res: Response) => {
+  const profileId = req.user?.id ?? 'default';
+  const userTimer = getTimerForUser(profileId);
+  res.json(userTimer.getStatus());
 });
 
 app.get('/api/timer/insights', async (req: Request, res: Response) => {

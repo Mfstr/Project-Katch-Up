@@ -4,6 +4,7 @@ const mockChain = {
   from: jest.fn(),
   select: jest.fn(),
   insert: jest.fn(),
+  upsert: jest.fn(),
   update: jest.fn(),
   delete: jest.fn(),
   eq: jest.fn(),
@@ -15,6 +16,7 @@ const mockChain = {
 mockChain.from.mockReturnValue(mockChain);
 mockChain.select.mockReturnValue(mockChain);
 mockChain.insert.mockReturnValue(mockChain);
+mockChain.upsert.mockReturnValue(mockChain);
 mockChain.update.mockReturnValue(mockChain);
 mockChain.delete.mockReturnValue(mockChain);
 mockChain.eq.mockReturnValue(mockChain);
@@ -473,7 +475,7 @@ describe('Insights & Session Pattern Analysis Service', () => {
     });
 
     it('applyRecommendation updates profiles in Supabase', async () => {
-      mockChain.eq.mockResolvedValueOnce({ error: null });
+      mockChain.upsert.mockResolvedValueOnce({ error: null });
 
       const result = await applyRecommendation('user-xyz', {
         target: 'break_interval',
@@ -481,8 +483,10 @@ describe('Insights & Session Pattern Analysis Service', () => {
       });
 
       expect(supabase.from).toHaveBeenCalledWith('profiles');
-      expect(supabase.update).toHaveBeenCalledWith({ break_interval: 3 });
-      expect(supabase.eq).toHaveBeenCalledWith('id', 'user-xyz');
+      expect(supabase.upsert).toHaveBeenCalledWith(
+        { id: 'user-xyz', break_interval: 3 },
+        { onConflict: 'id' },
+      );
       expect(result.success).toBe(true);
       expect(result.updatedSettings).toEqual({ breakInterval: 3 });
     });
