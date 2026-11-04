@@ -7,6 +7,7 @@ const mockChain = {
   insert: jest.fn(),
   update: jest.fn(),
   delete: jest.fn(),
+  upsert: jest.fn(),
   eq: jest.fn(),
   is: jest.fn(),
   order: jest.fn(),
@@ -20,6 +21,7 @@ mockChain.select.mockReturnValue(mockChain);
 mockChain.insert.mockReturnValue(mockChain);
 mockChain.update.mockReturnValue(mockChain);
 mockChain.delete.mockReturnValue(mockChain);
+mockChain.upsert.mockReturnValue(mockChain);
 mockChain.eq.mockReturnValue(mockChain);
 mockChain.is.mockReturnValue(mockChain);
 mockChain.order.mockReturnValue(mockChain);
@@ -114,6 +116,27 @@ describe('Task Service', () => {
       await expect(createTask({ title: 'Faulty task' })).rejects.toThrow(
         'Failed to create task: DB insert violation',
       );
+    });
+
+    it('retries and succeeds when profile_id fkey violation occurs and profile can be provisioned', async () => {
+      mockChain.upsert.mockResolvedValueOnce({ error: null });
+      mockChain.single
+        .mockResolvedValueOnce({
+          data: null,
+          error: {
+            message:
+              'insert or update on table "tasks" violates foreign key constraint "tasks_profile_id_fkey"',
+          },
+        })
+        .mockResolvedValueOnce({
+          data: { id: 11, title: 'Recovered task', due_date: null, is_complete: false },
+          error: null,
+        });
+
+      const result = await createTask({ title: 'Recovered task', profile_id: 'user-recovered' });
+      expect(mockChain.from).toHaveBeenCalledWith('profiles');
+      expect(result.id).toBe(11);
+      expect(result.title).toBe('Recovered task');
     });
   });
 
