@@ -11,6 +11,20 @@ import { registerUser, loginUser } from './authService.js';
 import { verifyToken } from './verifyToken.js';
 import { logger, httpLogger } from './logger.js';
 
+// ===========================================================================
+// Process-Level Safety Nets (Catch unhandled background crashes)
+// ===========================================================================
+process.on('unhandledRejection', (reason: unknown) => {
+  console.error('[Fatal] Unhandled Promise Rejection detected:', reason);
+  // In a full production environment, you might initiate a graceful shutdown here
+});
+
+process.on('uncaughtException', (error: Error) => {
+  console.error('[Fatal] Uncaught Synchronous Exception detected:', error);
+  // Perform synchronous cleanup if needed before exiting
+  process.exit(1);
+});
+
 const app = express();
 app.use(helmet());
 app.use(cors());
@@ -231,16 +245,30 @@ app.post('/api/auth/login', async (req: Request, res: Response) => {
 });
 
 // ---------------------------------------------------------------------------
-// Global Error Handler
+// Global Error Handling
 // ---------------------------------------------------------------------------
-
 app.use((err: unknown, _req: Request, res: Response, _next: NextFunction) => {
-  void _next;
-  logger.error({ err }, 'Unhandled error in request pipeline');
+  void _next; // Explicitly mark _next as unused to avoid TypeScript warnings
+  // Prevent sending a response if headers were already sent downstream
   if (res.headersSent) {
     return;
   }
-  res.status(500).json({ error: 'Internal Server Error' });
+
+  const message = err instanceof Error ? err.message : String(err);
+  
+  // Extract custom status codes (e.g., 400, 404, 401) or default to 500
+  const rawStatus = typeof err === 'object' && err !== null && 'status' in err
+    ? Number((err as Record<string, unknown>).status)
+    : 500;
+
+  const statusCode = !isNaN(rawStatus) && rawStatus >= 400 && rawStatus < 600 ? rawStatus : 500;
+
+  // Use structured logging instead of console.error
+  logger.error({ err, statusCode }, message);
+
+  res.status(statusCode).json({
+    error: statusCode === 500 ? 'Internal Server Error' : message,
+  });
 });
 
 // ---------------------------------------------------------------------------

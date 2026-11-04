@@ -35,7 +35,7 @@ export default function Authorize() {
             const token = body.session?.access_token;
             if (token) {
                 localStorage.setItem('authToken', token);
-                navigate('/');
+                navigate('/dashboard');
             } else {
                 throw new Error('No access token returned from server.');
             }
