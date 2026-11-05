@@ -292,7 +292,7 @@ describe('Task Service', () => {
   });
 
   describe('getNextTask', () => {
-    it('returns the next incomplete task for a user', async () => {
+    it('returns the next incomplete task for a user ordered by due_date ASC', async () => {
       const mockRow = {
         id: 3,
         title: 'Next up',
@@ -304,11 +304,51 @@ describe('Task Service', () => {
 
       const result = await getNextTask('user-123');
 
+      expect(supabase.from).toHaveBeenCalledWith('tasks');
+      expect(supabase.select).toHaveBeenCalledWith('*');
+      expect(supabase.is).toHaveBeenCalledWith('deleted_at', null);
+      expect(supabase.is).toHaveBeenCalledWith('is_complete', false);
+      expect(supabase.eq).toHaveBeenCalledWith('profile_id', 'user-123');
+      expect(supabase.order).toHaveBeenCalledWith('due_date', {
+        ascending: true,
+        nullsFirst: false,
+      });
+      expect(supabase.limit).toHaveBeenCalledWith(1);
       expect(result).toEqual({
         id: 3,
         title: 'Next up',
         description: 'Do this now',
         dueDate: '2026-10-18',
+        isComplete: false,
+      });
+    });
+
+    it('returns the next incomplete task when profileId is omitted', async () => {
+      const mockRow = {
+        id: 4,
+        title: 'Global Urgent Task',
+        description: 'No specific profile',
+        due_date: '2026-10-19',
+        is_complete: false,
+      };
+      mockChain.single.mockResolvedValueOnce({ data: mockRow, error: null });
+
+      const result = await getNextTask();
+
+      expect(supabase.from).toHaveBeenCalledWith('tasks');
+      expect(supabase.select).toHaveBeenCalledWith('*');
+      expect(supabase.is).toHaveBeenCalledWith('deleted_at', null);
+      expect(supabase.is).toHaveBeenCalledWith('is_complete', false);
+      expect(supabase.order).toHaveBeenCalledWith('due_date', {
+        ascending: true,
+        nullsFirst: false,
+      });
+      expect(supabase.limit).toHaveBeenCalledWith(1);
+      expect(result).toEqual({
+        id: 4,
+        title: 'Global Urgent Task',
+        description: 'No specific profile',
+        dueDate: '2026-10-19',
         isComplete: false,
       });
     });
