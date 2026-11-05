@@ -6,11 +6,12 @@ jest.unstable_mockModule('../src/supabaseClient.js', () => ({
         auth: {
             signUp: jest.fn(),
             signInWithPassword: jest.fn(),
+            signOut: jest.fn(),
         },
     },
 }));
 
-const { registerUser, loginUser } = await import('../src/authService.js');
+const { registerUser, loginUser, logoutUser } = await import('../src/authService.js');
 const { supabase } = await import('../src/supabaseClient.js');
 
 describe('Auth Service', () => {
@@ -68,6 +69,26 @@ describe('Auth Service', () => {
             await expect(
                 loginUser('wrong@example.com', 'wrongpassword')
             ).rejects.toThrow('Login failed: Invalid login credentials');
+        });
+    });
+
+    describe('logoutUser', () => {
+        it('successfully logs out a user', async () => {
+            supabase.auth.signOut.mockResolvedValueOnce({ error: null });
+
+            const result = await logoutUser('fake-token');
+
+            expect(supabase.auth.signOut).toHaveBeenCalled();
+            expect(result).toEqual({ message: 'Logged out successfully' });
+        });
+
+        it('throws an error when logout fails', async () => {
+            const mockError = { message: 'Session expired or invalid' };
+            supabase.auth.signOut.mockResolvedValueOnce({ error: mockError });
+
+            await expect(
+                logoutUser()
+            ).rejects.toThrow('Logout failed: Session expired or invalid');
         });
     });
 });

@@ -101,4 +101,47 @@ export async function getTimerStatus() {
   return apiClient('/api/timer/status');
 }
 
+export async function logout() {
+  try {
+    await apiClient('/api/auth/logout', { method: 'POST' });
+  } finally {
+    localStorage.removeItem(AUTH_TOKEN_KEY);
+  }
+}
+
+export async function getTimerInsights({ days = 7 } = {}) {
+  const query = days ? `?days=${encodeURIComponent(days)}` : '';
+  return apiClient(`/api/timer/insights${query}`);
+}
+
+export async function applyTimerInsight({ target, value, action } = {}) {
+  return apiClient('/api/timer/insights/apply', {
+    method: 'POST',
+    body: JSON.stringify({ target, value, action }),
+  });
+}
+
+export async function recordTimerSession(sessionData) {
+  return apiClient('/api/timer/sessions', {
+    method: 'POST',
+    body: JSON.stringify(sessionData),
+  });
+}
+
+export async function getTimerSessions({ limit = 50 } = {}) {
+  const query = limit ? `?limit=${encodeURIComponent(limit)}` : '';
+  return apiClient(`/api/timer/sessions${query}`);
+}
+
+export async function getTimerPreferences() {
+  return apiClient('/api/timer/preferences');
+}
+
+export async function updateTimerPreferences(preferences) {
+  return apiClient('/api/timer/preferences', {
+    method: 'PUT',
+    body: JSON.stringify(preferences),
+  });
+}
+
 export default apiClient;

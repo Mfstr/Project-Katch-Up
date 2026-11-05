@@ -7,10 +7,17 @@ import type { Request, Response, NextFunction } from 'express';
 import { PomodoroTimer } from './pomodoroLogic.js';
 import { addCalendar, listCalendars, deleteCalendar, syncCalendarById } from './calendarService.js';
 import { softDeleteTask, getNextTask, getAllTasks, createTask, updateTask } from './taskService.js';
-import { registerUser, loginUser } from './authService.js';
+import { registerUser, loginUser, logoutUser } from './authService.js';
+import {
+  getTimerInsights,
+  applyRecommendation,
+  recordSession,
+  getUserSessions,
+  getUserPreferences,
+} from './insightsService.js';
 import { verifyToken } from './verifyToken.js';
 import { logger, httpLogger } from './logger.js';
-import { checkReadiness } from './healthService.js';
+import { checkReadiness } from './healthService.js'; // eslint-disable-line @typescript-eslint/no-unused-vars
 
 // ===========================================================================
 // Process-Level Safety Nets (Catch unhandled background crashes)
@@ -32,58 +39,184 @@ app.use(cors());
 app.use(express.json());
 app.use(httpLogger);
 
-// ---------------------------------------------------------------------------
-// Health & Readiness Probes (Liveness & Readiness)
-// ---------------------------------------------------------------------------
-app.get('/health', (_req: Request, res: Response) => {
-  res.status(200).json({ status: 'ok', uptime: process.uptime(), timestamp: new Date().toISOString() });
-});
+const userTimers = new Map<string, PomodoroTimer>();
 
-app.get('/api/health', (_req: Request, res: Response) => {
-  res.status(200).json({ status: 'ok', uptime: process.uptime(), timestamp: new Date().toISOString() });
-});
-
-app.get('/ready', async (_req: Request, res: Response) => {
-  const readiness = await checkReadiness();
-  const statusCode = readiness.status === 'ready' ? 200 : 503;
-  res.status(statusCode).json(readiness);
-});
-
-app.get('/api/ready', async (_req: Request, res: Response) => {
-  const readiness = await checkReadiness();
-  const statusCode = readiness.status === 'ready' ? 200 : 503;
-  res.status(statusCode).json(readiness);
-});
-
-const timer = new PomodoroTimer();
+export function getTimerForUser(profileId: string): PomodoroTimer {
+  let userTimer = userTimers.get(profileId);
+  if (!userTimer) {
+    userTimer = new PomodoroTimer();
+    userTimers.set(profileId, userTimer);
+  }
+  return userTimer;
+}
 
 // ---------------------------------------------------------------------------
 // Pomodoro Timer Routes
 // ---------------------------------------------------------------------------
 app.use('/api/timer', verifyToken);
 
-app.post('/api/timer/start', (_req: Request, res: Response) => {
-  const endTime = timer.start();
+app.post('/api/timer/start', (req: Request, res: Response) => {
+  const profileId = req.user?.id ?? 'default';
+  const userTimer = getTimerForUser(profileId);
+  const { taskId, durationSeconds } = req.body ?? {};
+  const endTime = userTimer.start({
+    taskId: typeof taskId === 'number' ? taskId : undefined,
+    durationSeconds: typeof durationSeconds === 'number' ? durationSeconds : undefined,
+  });
   res.json({ message: 'Timer started.', endTime });
 });
 
-app.post('/api/timer/pause', (_req: Request, res: Response) => {
-  const remainingSeconds = timer.pause();
+app.post('/api/timer/pause', (req: Request, res: Response) => {
+  const profileId = req.user?.id ?? 'default';
+  const userTimer = getTimerForUser(profileId);
+  const remainingSeconds = userTimer.pause();
   res.json({ message: 'Timer paused.', remainingSeconds });
 });
 
-app.post('/api/timer/complete', (_req: Request, res: Response) => {
-  const nextPhase = timer.complete();
-  res.json({ message: 'Phase complete.', nextPhase });
+app.post('/api/timer/complete', async (req: Request, res: Response) => {
+  try {
+    const profileId = req.user?.id ?? 'default';
+    const userTimer = getTimerForUser(profileId);
+    const nextPhase = userTimer.complete();
+    const completedSession = userTimer.getLastCompletedSession();
+
+    let recordedSession = null;
+    if (completedSession && profileId !== 'default') {
+      try {
+        recordedSession = await recordSession(profileId, completedSession);
+      } catch (dbErr) {
+        logger.error({ err: dbErr }, 'Failed to record completed session in database');
+      }
+    }
+
+    res.json({ message: 'Phase complete.', nextPhase, session: recordedSession });
+  } catch (err: unknown) {
+    logger.error({ err }, 'Error completing timer phase');
+    res.status(500).json({ error: err instanceof Error ? err.message : String(err) });
+  }
 });
 
-app.post('/api/timer/reset', (_req: Request, res: Response) => {
-  timer.reset();
-  res.json({ message: 'Timer reset.' });
+app.post('/api/timer/reset', async (req: Request, res: Response) => {
+  try {
+    const profileId = req.user?.id ?? 'default';
+    const userTimer = getTimerForUser(profileId);
+    const interruptedSession = userTimer.reset();
+
+    let recordedSession = null;
+    if (interruptedSession && profileId !== 'default') {
+      try {
+        recordedSession = await recordSession(profileId, interruptedSession);
+      } catch (dbErr) {
+        logger.error({ err: dbErr }, 'Failed to record interrupted session in database');
+      }
+    }
+
+    res.json({ message: 'Timer reset.', session: recordedSession });
+  } catch (err: unknown) {
+    logger.error({ err }, 'Error resetting timer');
+    res.status(500).json({ error: err instanceof Error ? err.message : String(err) });
+  }
 });
 
-app.get('/api/timer/status', (_req: Request, res: Response) => {
-  res.json(timer.getStatus());
+app.get('/api/timer/status', (req: Request, res: Response) => {
+  const profileId = req.user?.id ?? 'default';
+  const userTimer = getTimerForUser(profileId);
+  res.json(userTimer.getStatus());
+});
+
+app.get('/api/timer/insights', async (req: Request, res: Response) => {
+  try {
+    const profileId = req.user!.id;
+    const days = req.query['days'] ? parseInt(String(req.query['days']), 10) : 7;
+    const insights = await getTimerInsights(profileId, isNaN(days) ? 7 : days);
+    res.json(insights);
+  } catch (err: unknown) {
+    logger.error({ err }, 'Error generating timer insights');
+    res.status(500).json({ error: err instanceof Error ? err.message : String(err) });
+  }
+});
+
+app.post('/api/timer/insights/apply', async (req: Request, res: Response) => {
+  try {
+    const profileId = req.user!.id;
+    const { target, value, action } = req.body ?? {};
+    const applyTarget = target ?? action?.target;
+    const applyValue = value ?? action?.value;
+
+    if (!applyTarget || applyValue === undefined) {
+      res.status(400).json({ error: 'target and value are required to apply insight recommendation.' });
+      return;
+    }
+
+    const result = await applyRecommendation(profileId, { target: applyTarget, value: applyValue });
+    res.json({ message: 'Recommendation applied successfully.', ...result });
+  } catch (err: unknown) {
+    logger.error({ err }, 'Error applying insight recommendation');
+    res.status(400).json({ error: err instanceof Error ? err.message : String(err) });
+  }
+});
+
+app.post('/api/timer/sessions', async (req: Request, res: Response) => {
+  try {
+    const profileId = req.user!.id;
+    const session = await recordSession(profileId, req.body ?? {});
+    res.status(201).json(session);
+  } catch (err: unknown) {
+    logger.error({ err }, 'Error recording pomodoro session');
+    res.status(500).json({ error: err instanceof Error ? err.message : String(err) });
+  }
+});
+
+app.get('/api/timer/sessions', async (req: Request, res: Response) => {
+  try {
+    const profileId = req.user!.id;
+    const limit = req.query['limit'] ? parseInt(String(req.query['limit']), 10) : 100;
+    const sessions = await getUserSessions(profileId, isNaN(limit) ? 100 : limit);
+    res.json(sessions);
+  } catch (err: unknown) {
+    logger.error({ err }, 'Error retrieving pomodoro sessions');
+    res.status(500).json({ error: err instanceof Error ? err.message : String(err) });
+  }
+});
+
+app.get('/api/timer/preferences', async (req: Request, res: Response) => {
+  try {
+    const profileId = req.user!.id;
+    const preferences = await getUserPreferences(profileId);
+    res.json(preferences);
+  } catch (err: unknown) {
+    logger.error({ err }, 'Error retrieving timer preferences');
+    res.status(500).json({ error: err instanceof Error ? err.message : String(err) });
+  }
+});
+
+app.put('/api/timer/preferences', async (req: Request, res: Response) => {
+  try {
+    const profileId = req.user!.id;
+    const updates = req.body ?? {};
+    const results: Record<string, unknown> = {};
+
+    for (const [key, val] of Object.entries(updates)) {
+      if (
+        [
+          'focusInterval',
+          'focus_interval',
+          'breakInterval',
+          'break_interval',
+          'pomodoroCycles',
+          'pomodoro_cycles',
+        ].includes(key)
+      ) {
+        const updateRes = await applyRecommendation(profileId, { target: key, value: Number(val) });
+        Object.assign(results, updateRes.updatedSettings);
+      }
+    }
+
+    res.json({ message: 'Preferences updated successfully.', updatedSettings: results });
+  } catch (err: unknown) {
+    logger.error({ err }, 'Error updating timer preferences');
+    res.status(400).json({ error: err instanceof Error ? err.message : String(err) });
+  }
 });
 
 // ---------------------------------------------------------------------------
@@ -265,6 +398,18 @@ app.post('/api/auth/login', async (req: Request, res: Response) => {
   } catch (err: unknown) {
     logger.warn({ err }, 'User login failed');
     res.status(401).json({ error: err instanceof Error ? err.message : String(err) });
+  }
+});
+
+app.post('/api/auth/logout', async (req: Request, res: Response) => {
+  try {
+    const authHeader = req.headers.authorization;
+    const token = authHeader?.startsWith('Bearer ') ? authHeader.split(' ')[1] : undefined;
+    const data = await logoutUser(token);
+    res.status(200).json(data);
+  } catch (err: unknown) {
+    logger.warn({ err }, 'User logout failed');
+    res.status(500).json({ error: err instanceof Error ? err.message : String(err) });
   }
 });
 

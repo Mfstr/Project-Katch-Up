@@ -6,45 +6,79 @@ CREATE TABLE public.profiles (
   created_at timestamp with time zone NOT NULL DEFAULT now(),
   deleted_at timestamp with time zone,
   ical_url text UNIQUE,
-  focus_interval integer,
-  break_interval integer,
-  pomodoro_cycles integer,
+  focus_interval integer DEFAULT 25,
+  break_interval integer DEFAULT 5,
+  pomodoro_cycles integer DEFAULT 4,
   CONSTRAINT profiles_pkey PRIMARY KEY (id),
-  CONSTRAINT profiles_id_fkey FOREIGN KEY (id) REFERENCES auth.users(id),
-  CONSTRAINT profiles_ical_url_fkey FOREIGN KEY (ical_url) REFERENCES public.calendar(ical_url)
+  CONSTRAINT profiles_id_fkey FOREIGN KEY (id) REFERENCES auth.users(id) ON DELETE CASCADE
 );
+
+CREATE TABLE public.calendars (
+  id bigint GENERATED ALWAYS AS IDENTITY NOT NULL,
+  profile_id uuid NOT NULL,
+  created_at timestamp with time zone NOT NULL DEFAULT now(),
+  deleted_at timestamp with time zone,
+  name text NOT NULL,
+  description text,
+  ical_url text NOT NULL,
+  CONSTRAINT calendars_pkey PRIMARY KEY (id),
+  CONSTRAINT calendars_profile_id_fkey FOREIGN KEY (profile_id) REFERENCES public.profiles(id) ON DELETE CASCADE
+);
+
 CREATE TABLE public.tasks (
   id bigint GENERATED ALWAYS AS IDENTITY NOT NULL,
+  profile_id uuid NOT NULL,
+  calendar_id bigint,
+  external_id text,
   created_at timestamp with time zone NOT NULL DEFAULT now(),
   deleted_at timestamp with time zone,
-  title text,
+  title text NOT NULL,
   description text,
-  is_complete boolean,
+  is_complete boolean DEFAULT false,
   due_date timestamp with time zone,
-  profile_id uuid,
   CONSTRAINT tasks_pkey PRIMARY KEY (id),
-  CONSTRAINT tasks_profile_id_fkey FOREIGN KEY (profile_id) REFERENCES public.profiles(id)
-);
-CREATE TABLE public.calendar (
-  id bigint GENERATED ALWAYS AS IDENTITY NOT NULL,
-  created_at timestamp with time zone NOT NULL DEFAULT now(),
-  deleted_at timestamp with time zone,
-  name text,
-  description text,
-  ical_url text UNIQUE,
-  CONSTRAINT calendar_pkey PRIMARY KEY (id)
+  CONSTRAINT tasks_profile_id_fkey FOREIGN KEY (profile_id) REFERENCES public.profiles(id) ON DELETE CASCADE,
+  CONSTRAINT tasks_calendar_id_fkey FOREIGN KEY (calendar_id) REFERENCES public.calendars(id) ON DELETE CASCADE,
+  CONSTRAINT tasks_external_id_unique UNIQUE (profile_id, external_id)
 );
 
 CREATE TABLE public.pomodoro_sessions (
-  id uuid NOT NULL,
+  id bigint GENERATED ALWAYS AS IDENTITY NOT NULL,
   profile_id uuid NOT NULL,
   task_id bigint,
-  session_type VARCHAR NOT NULL,
-  planned_duraton_seconds integer NOT NULL,
-  actual_duration_seconds integer NOT NULL,
-  was_interrupted boolean NOT NULL DEFAULT false,
+  session_type text NOT NULL,
+  planned_duration_seconds integer NOT NULL DEFAULT 1500,
+  actual_duration_seconds integer DEFAULT 1500,
+  duration_minutes integer,
+  tasks_completed integer DEFAULT 0,
+  is_interrupted boolean DEFAULT false,
+  is_completed boolean DEFAULT true,
+  started_at timestamp with time zone NOT NULL DEFAULT now(),
+  completed_at timestamp with time zone,
+  ended_at timestamp with time zone,
   created_at timestamp with time zone NOT NULL DEFAULT now(),
   CONSTRAINT pomodoro_sessions_pkey PRIMARY KEY (id),
-  CONSTRAINT pomodoro_sessions_profile_id_fkey FOREIGN KEY (profile_id) REFERENCES public.profiles(id),
-  CONSTRAINT pomodoro_sessions_task_id_fkey FOREIGN KEY (task_id) REFERENCES public.tasks(id)
-)
+  CONSTRAINT pomodoro_sessions_profile_id_fkey FOREIGN KEY (profile_id) REFERENCES public.profiles(id) ON DELETE CASCADE,
+  CONSTRAINT pomodoro_sessions_task_id_fkey FOREIGN KEY (task_id) REFERENCES public.tasks(id) ON DELETE SET NULL
+);
+
+-- Automatic profile creation trigger on auth.users signups
+CREATE OR REPLACE FUNCTION public.handle_new_user()
+RETURNS trigger
+LANGUAGE plpgsql
+SECURITY DEFINER
+SET search_path = public
+AS $$
+BEGIN
+  INSERT INTO public.profiles (id)
+  VALUES (new.id)
+  ON CONFLICT (id) DO NOTHING;
+  RETURN new;
+END;
+$$;
+
+DROP TRIGGER IF EXISTS on_auth_user_created ON auth.users;
+CREATE TRIGGER on_auth_user_created
+  AFTER INSERT ON auth.users
+  FOR EACH ROW EXECUTE FUNCTION public.handle_new_user();
+
