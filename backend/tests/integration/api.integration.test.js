@@ -451,4 +451,3 @@ describe('Server Error Catch Blocks & Global Error Handler', () => {
       expect(response.body).toHaveProperty('updatedSettings');
     });
   });
-});

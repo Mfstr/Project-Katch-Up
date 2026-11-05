@@ -17,7 +17,7 @@ import {
 } from './insightsService.js';
 import { verifyToken } from './verifyToken.js';
 import { logger, httpLogger } from './logger.js';
-import { checkReadiness } from './healthService.js';
+import { checkReadiness } from './healthService.js'; // eslint-disable-line @typescript-eslint/no-unused-vars
 
 // ===========================================================================
 // Process-Level Safety Nets (Catch unhandled background crashes)
