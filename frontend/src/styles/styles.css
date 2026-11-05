@@ -1019,3 +1019,86 @@ button.settings-task-trigger:hover {
     transform: translateY(-5px);
     pointer-events: none;
 }
+
+.task-filter-toolbar {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) minmax(170px, .7fr);
+    gap: 10px;
+    margin: 0 0 16px;
+}
+
+.task-search-field,
+.task-sort-field {
+    display: grid;
+    gap: 5px;
+    min-width: 0;
+}
+
+.task-search-field > span,
+.task-sort-field > span {
+    color: var(--text-secondary);
+    font-size: 10px;
+    font-weight: 700;
+    letter-spacing: .02em;
+}
+
+.task-search-field input,
+.task-sort-field select {
+    width: 100%;
+    min-width: 0;
+    min-height: 38px;
+    padding: 8px 10px;
+    border: 1px solid var(--border-color);
+    color: var(--text-primary);
+    background: var(--surface-color);
+    font-size: 12px;
+}
+
+.task-search-field input:focus-visible,
+.task-sort-field select:focus-visible {
+    border-color: var(--primary-color);
+    outline: 3px solid color-mix(in srgb, var(--primary-color) 22%, transparent);
+    outline-offset: 1px;
+}
+
+.task-group {
+    display: grid;
+    gap: 9px;
+    min-width: 0;
+    margin-bottom: 18px;
+}
+
+.task-group-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 10px;
+    padding: 0 1px 7px;
+    border-bottom: 1px solid var(--border-color);
+}
+
+.task-group-header h2 {
+    margin: 0;
+    color: var(--text-primary);
+    font: 700 14px/1.25 var(--font-heading);
+}
+
+.task-group-header p {
+    margin: 3px 0 0;
+    color: var(--text-secondary);
+    font-size: 10px;
+    line-height: 1.3;
+}
+
+.task-group-count {
+    display: inline-grid;
+    place-items: center;
+    min-width: 23px;
+    height: 23px;
+    padding: 0 6px;
+    color: var(--text-secondary);
+    background: var(--surface-muted);
+    font-size: 10px;
+    font-weight: 700;
+    font-variant-numeric: tabular-nums;
+}
