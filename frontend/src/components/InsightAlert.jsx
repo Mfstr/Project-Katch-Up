@@ -1,8 +1,8 @@
-import { useEffect, useRef } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { ToastContainer, toast } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
 
-import { getTimerInsights } from '../services/apiClient.js';
+import { getTimerInsights, updateTimerPreferences } from '../services/apiClient.js';
 
 
 function getSeverityLabel(severity) {
@@ -16,13 +16,38 @@ function getSeverityLabel(severity) {
     }
 }
 
+function getPreferenceUpdate(suggestedAction) {
+    if (!suggestedAction || suggestedAction.value == null) return null;
+
+    const targetToPreferenceKey = {
+        break_interval: 'breakInterval',
+        breakInterval: 'breakInterval',
+        focus_interval: 'focusInterval',
+        focusInterval: 'focusInterval',
+        pomodoro_cycles: 'pomodoroCycles',
+        pomodoroCycles: 'pomodoroCycles',
+    };
+    const preferenceKey = targetToPreferenceKey[suggestedAction.target];
+    const value = Number(suggestedAction.value);
+
+    if (!preferenceKey || !Number.isInteger(value) || value < 1 || value > 180) {
+        return null;
+    }
+
+    return { [preferenceKey]: value };
+}
+
 function getSuggestedActionLabel(suggestedAction) {
-    if (!suggestedAction || suggestedAction.value == null) return '';
+    const prefereenceUpdate = getPreferenceUpdate(suggestedAction);
+    if (!prefereenceUpdate) return '';
 
     const targetLabels ={
         break_interval: 'Suggested break interval:',
+        breakInterval: 'Suggested break interval:',
         focus_interval: 'Suggested focus interval:',
+        focusInterval: 'Suggested focus interval:',
         pomodoro_cycles: "Sessions before a long break:",
+        pomodoroCycles: "Sessions before a long break:",
     };
 
     const targetLabel = targetLabels[suggestedAction.target] || 'Suggested Setting';
@@ -33,6 +58,24 @@ function getSuggestedActionLabel(suggestedAction) {
 
 function InsightToastContent({ recommendation }) {
     const actionLabel = getSuggestedActionLabel(recommendation.suggestedAction);
+    const preferenceUpdate = getPreferenceUpdate(recommendation.suggestedAction);
+    const [applyState, setApplyState] = useState('idle');
+    const [applyError, setApplyError] = useState('');
+
+    const handleApply = async () => {
+        if (!preferenceUpdate || applyState !== 'idle') return;
+
+        setApplyState('applying');
+        setApplyError('');
+
+        try {
+            await updateTimerPreferences(preferenceUpdate);
+            setApplyState('applied');
+        } catch (error) {
+            setApplyState('idle');
+            setApplyError(error instanceof Error ? error.message : 'Unable to apply the recommendation.');
+        }
+    };
 
     return (
         <div className="insight-toast-content">
@@ -46,7 +89,31 @@ function InsightToastContent({ recommendation }) {
                 <p className="insight-toast-message">{recommendation.message}</p>
             )}
             {actionLabel && (
-                <span className="insight-toast-suggestion">{actionLabel}</span>
+                <>
+                    <span className="insight-toast-suggestion">{actionLabel}</span>
+                    <div className="insight-toast-actions">
+                        <button
+                            type="button"
+                            className={`insight-toast-apply-button${applyState === 'applied' ? ' is-applied' : ''}`}
+                            onClick={handleApply}
+                            disabled={applyState !== 'idle'}
+                        >
+                            {applyState === 'applying' && 'Applying...'}
+                            {applyState === 'applied' && 'Applied'}
+                            {applyState === 'idle' && 'Apply'}
+                        </button>
+                        {applyState === 'applied' && (
+                            <span className="insight-toast-apply-success" role="status">
+                                Preference successfully saved!
+                            </span>
+                        )}
+                    </div>
+                    {applyError && (
+                        <p className="insight-toast-apply-error" role="alert">
+                            {applyError}
+                        </p>
+                    )}
+                </>
             )}
         </div>
     );
@@ -58,7 +125,7 @@ function showInsightToast(recommendation, index) {
         className: 'insight-toast-shell',
         autoClose: 8500,
         closeOnClick: false,
-        delay: index * 500,
+        delay: index * 650,
     };
 
     const content = <InsightToastContent recommendation={recommendation} />;

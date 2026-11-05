@@ -1182,6 +1182,66 @@ button.settings-task-trigger:hover {
     overflow-wrap: anywhere;
 }
 
+.insight-toast-actions {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 8px;
+    margin-top: 5px;
+}
+
+.insight-toast-apply-button {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-width: 66px;
+    min-height: 30px;
+    padding: 6px 12px;
+    border: 1px solid var(--primary-color);
+    color: var(--surface-color);
+    font-family: var(--font-body);
+    font-size: 11px;
+    font-weight: 700;
+    line-height: 1.2;
+    cursor: pointer;
+    transition: background-color 0.18s ease, border-color 0.18s ease, opacity 0.18s ease;
+}
+
+.insight-toast-apply-button:hover:not(:disabled) {
+    border-color: var(--primary-hover, var(--primary-color));
+    background-color: var(--primary-hover, var(--primary-color));
+}
+
+.insight-toast-apply-button:focus-visible {
+    outline: 3px solid var(--task-color);
+    outline-offset: 2px;
+}
+
+.insight-toast-apply-button:disabled {
+    cursor: default;
+    opacity: 0.72;
+}
+
+.insight-toast-apply-button.is-applied {
+    border-color: var(--success-color);
+    background: var(--success-color);
+}
+
+.insight-toast-apply-success {
+    color: var(--success-color);
+    font-size: 10px;
+    font-weight: 700;
+    line-height: 1.35;
+}
+
+.insight-toast-apply-error {
+    margin: 2px 0 0;
+    color: var(--danger-color, #d6455d);
+    font-size: 10px;
+    line-height: 1.4;
+    overflow-wrap: anywhere;
+}
+
 .insight-toast-container .Toastify__close-button {
     color: var(--text-secondary);
     opacity: 0.7;
