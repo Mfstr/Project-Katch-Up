@@ -1,3 +1,4 @@
+import { jest } from '@jest/globals';
 import { PomodoroTimer } from '../src/pomodoroLogic.ts';
 
 
@@ -85,5 +86,40 @@ describe('Pomodoro Timer Logic', () => {
     expect(status.isActive).toBe(false);
     expect(status.pomodoroCount).toBe(0);
     expect(status.remainingSeconds).toBe(25 * 60);
+  });
+
+  test('start accepts taskId and custom durationSeconds', () => {
+    timer.start({ taskId: 42, durationSeconds: 20 * 60 });
+    const status = timer.getStatus();
+    expect(status.taskId).toBe(42);
+    expect(status.remainingSeconds).toBe(20 * 60);
+    expect(status.isActive).toBe(true);
+  });
+
+  test('complete records last completed session details', () => {
+    timer.start({ taskId: 10, durationSeconds: 25 * 60 });
+    timer.complete();
+
+    const session = timer.getLastCompletedSession();
+    expect(session).toBeDefined();
+    expect(session.sessionType).toBe('focus');
+    expect(session.taskId).toBe(10);
+    expect(session.plannedDurationSeconds).toBe(25 * 60);
+    expect(session.isCompleted).toBe(true);
+    expect(session.isInterrupted).toBe(false);
+  });
+
+  test('reset returns interrupted session if timer was actively running', () => {
+    jest.useFakeTimers();
+    timer.start({ taskId: 99, durationSeconds: 25 * 60 });
+    jest.advanceTimersByTime(10000); // 10 seconds
+
+    const interrupted = timer.reset();
+    expect(interrupted).toBeDefined();
+    expect(interrupted.isInterrupted).toBe(true);
+    expect(interrupted.isCompleted).toBe(false);
+    expect(interrupted.taskId).toBe(99);
+    expect(interrupted.actualDurationSeconds).toBeGreaterThanOrEqual(10);
+    jest.useRealTimers();
   });
 });

@@ -14,7 +14,9 @@
     "format": "prettier --write \".\"",
     "format:check": "prettier --check \".\"",
     "test:e2e": "playwright test",
-    "test:e2e:ui": "playwright test --ui"
+    "test:e2e:ui": "playwright test --ui",
+    "test:load:ramp": "k6 run backend/tests/load-tests/ramp-test.js",
+    "test:load:spike": "k6 run backend/tests/load-tests/spike-test.js"
   },
   "repository": {
     "type": "git",
@@ -36,6 +38,8 @@
     "cors": "^2.8.6",
     "dotenv": "^17.4.2",
     "express": "^5.2.1",
+    "express-rate-limit": "^8.7.2",
+    "helmet": "^8.3.0",
     "node-ical": "^0.27.1",
     "pg": "^8.23.0",
     "pino": "^10.4.0",
@@ -47,7 +51,7 @@
     "@types/cors": "^2.8.19",
     "@types/express": "^5.0.6",
     "@types/jest": "^30.0.0",
-    "@types/pino-http": "^5.8.4",
+    "@types/pino-http": "^6.1.0",
     "@types/supertest": "^7.2.1",
     "eslint": "^9.39.5",
     "eslint-config-prettier": "^10.1.8",
@@ -58,10 +62,13 @@
     "supertest": "^7.3.1",
     "ts-jest": "^29.4.14",
     "typescript": "^6.0.2",
-    "typescript-eslint": "^8.68.0"
+    "typescript-eslint": "^8.72.1"
   },
   "overrides": {
     "js-yaml": "^4.1.0",
     "proxy-addr": "^2.0.8"
+  },
+  "optionalDependencies": {
+    "@unrs/resolver-binding-darwin-arm64": "^1.13.0"
   }
 }
