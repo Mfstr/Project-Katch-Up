@@ -479,10 +479,10 @@ export default function SmartFocusUI() {
                 const nextDescription = hasOwn('description')
                     ? updatedTask.description
                     : updates.description ?? currentTask.description;
-                const nextIsComplete = updatedTask.nextIsComplete
+                const nextIsComplete = updatedTask.isComplete
                     ?? updatedTask.is_complete
                     ?? updates.is_complete
-                    ?? updates.is_complete
+                    ?? updates.isComplete
                     ?? currentTask.isComplete;
 
                 return {
