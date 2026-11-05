@@ -129,13 +129,18 @@ export const softDeleteTask = async (id: number): Promise<void> => {
   if (error) throw new Error(`Failed to delete task: ${error.message}`);
 };
 
-export const getNextTask = async (profileId: string) => {
-  const { data, error } = await supabase
+export const getNextTask = async (profileId?: string): Promise<TaskResponse | null> => {
+  let query = supabase
     .from('tasks')
     .select('*')
-    .eq('profile_id', profileId)
     .is('deleted_at', null)
-    .is('is_complete', false)
+    .is('is_complete', false);
+
+  if (profileId) {
+    query = query.eq('profile_id', profileId);
+  }
+
+  const { data, error } = await query
     .order('due_date', { ascending: true, nullsFirst: false })
     .limit(1)
     .single();

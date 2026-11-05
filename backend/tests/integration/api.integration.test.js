@@ -263,6 +263,15 @@ describe('Server Error Catch Blocks & Global Error Handler', () => {
     expect(response.body).toEqual({ error: 'No upcoming tasks found.' });
   });
 
+  it('GET /api/tasks/next returns 500 when getNextTask service fails', async () => {
+    const { getNextTask } = await import('../../src/taskService.js');
+    getNextTask.mockRejectedValueOnce(new Error('Query failed'));
+
+    const response = await request(app).get('/api/tasks/next');
+    expect(response.status).toBe(500);
+    expect(response.body).toEqual({ error: 'Query failed' });
+  });
+
   it('POST /api/tasks returns 500 when createTask fails', async () => {
     createTask.mockRejectedValueOnce(new Error('Insert error'));
 
