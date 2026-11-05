@@ -35,6 +35,14 @@ jest.unstable_mockModule('../../src/authService.js', () => ({
   loginUser: jest.fn().mockResolvedValue({ user: { id: '1' }, token: 'mock-jwt' }),
 }));
 
+jest.unstable_mockModule('../../src/healthService.js', () => ({
+  checkReadiness: jest.fn().mockResolvedValue({
+    status: 'ready',
+    database: 'connected',
+    timestamp: '2026-11-01T00:00:00.000Z',
+  }),
+}));
+
 const { createTask, updateTask, getAllTasks } = await import('../../src/taskService.js');
 
 // Import app after mocking modules
@@ -300,3 +308,60 @@ describe('Server Error Catch Blocks & Global Error Handler', () => {
     expect(response.status).toBe(400);
     expect(response.body.error).toBe('Invalid task ID');
   });
+
+describe('Liveness & Readiness Probes (Task 5.1)', () => {
+  it('GET /health returns 200 OK', async () => {
+    const res = await request(app).get('/health');
+    expect(res.status).toBe(200);
+    expect(res.body.status).toBe('ok');
+  });
+
+  it('GET /api/health returns 200 OK', async () => {
+    const res = await request(app).get('/api/health');
+    expect(res.status).toBe(200);
+    expect(res.body.status).toBe('ok');
+  });
+
+  it('GET /ready returns 200 when Supabase is available', async () => {
+    const { checkReadiness } = await import('../../src/healthService.js');
+    checkReadiness.mockResolvedValueOnce({
+      status: 'ready',
+      database: 'connected',
+      timestamp: '2026-11-01T00:00:00.000Z',
+    });
+
+    const res = await request(app).get('/ready');
+    expect(res.status).toBe(200);
+    expect(res.body.status).toBe('ready');
+    expect(res.body.database).toBe('connected');
+  });
+
+  it('GET /ready returns 503 when Supabase ping fails', async () => {
+    const { checkReadiness } = await import('../../src/healthService.js');
+    checkReadiness.mockResolvedValueOnce({
+      status: 'unavailable',
+      database: 'disconnected',
+      timestamp: '2026-11-01T00:00:00.000Z',
+      error: 'Database timeout',
+    });
+
+    const res = await request(app).get('/ready');
+    expect(res.status).toBe(503);
+    expect(res.body.status).toBe('unavailable');
+    expect(res.body.database).toBe('disconnected');
+  });
+
+  it('GET /api/ready returns 503 when Supabase ping fails', async () => {
+    const { checkReadiness } = await import('../../src/healthService.js');
+    checkReadiness.mockResolvedValueOnce({
+      status: 'unavailable',
+      database: 'disconnected',
+      timestamp: '2026-11-01T00:00:00.000Z',
+      error: 'Database timeout',
+    });
+
+    const res = await request(app).get('/api/ready');
+    expect(res.status).toBe(503);
+    expect(res.body.status).toBe('unavailable');
+  });
+});

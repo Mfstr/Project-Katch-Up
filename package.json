@@ -67,5 +67,8 @@
   "overrides": {
     "js-yaml": "^4.1.0",
     "proxy-addr": "^2.0.8"
+  },
+  "optionalDependencies": {
+    "@unrs/resolver-binding-darwin-arm64": "^1.13.0"
   }
 }

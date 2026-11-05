@@ -10,6 +10,7 @@ import { softDeleteTask, getNextTask, getAllTasks, createTask, updateTask } from
 import { registerUser, loginUser } from './authService.js';
 import { verifyToken } from './verifyToken.js';
 import { logger, httpLogger } from './logger.js';
+import { checkReadiness } from './healthService.js';
 
 // ===========================================================================
 // Process-Level Safety Nets (Catch unhandled background crashes)
@@ -30,6 +31,29 @@ app.use(helmet());
 app.use(cors());
 app.use(express.json());
 app.use(httpLogger);
+
+// ---------------------------------------------------------------------------
+// Health & Readiness Probes (Liveness & Readiness)
+// ---------------------------------------------------------------------------
+app.get('/health', (_req: Request, res: Response) => {
+  res.status(200).json({ status: 'ok', uptime: process.uptime(), timestamp: new Date().toISOString() });
+});
+
+app.get('/api/health', (_req: Request, res: Response) => {
+  res.status(200).json({ status: 'ok', uptime: process.uptime(), timestamp: new Date().toISOString() });
+});
+
+app.get('/ready', async (_req: Request, res: Response) => {
+  const readiness = await checkReadiness();
+  const statusCode = readiness.status === 'ready' ? 200 : 503;
+  res.status(statusCode).json(readiness);
+});
+
+app.get('/api/ready', async (_req: Request, res: Response) => {
+  const readiness = await checkReadiness();
+  const statusCode = readiness.status === 'ready' ? 200 : 503;
+  res.status(statusCode).json(readiness);
+});
 
 const timer = new PomodoroTimer();
 
