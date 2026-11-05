@@ -3,12 +3,12 @@ import { useCallback, useEffect, useRef, useState } from 'react';
 import {
     createTask,
     deleteTask,
-    getNextTask,
     getTimerStatus,
     pauseTimer,
     resetTimer,
     startTimer,
     stopTimer,
+    updateTask,
 } from '../services/apiClient.js';
 
 import StartSessionButton from './StartSessionButton.jsx';
@@ -76,6 +76,7 @@ export default function SmartFocusUI() {
     const [taskForm, setTaskForm] = useState(EMPTY_TASK_FORM);
     const [isCreatingTask, setCreatingTask] = useState(false);
     const [deletingTaskId, setDeletingTaskId] = useState(null);
+    const [updatingTaskId, setUpdatingTaskId] = useState(null);
     const [taskError, setTaskError] = useState('');
     const [taskNotice, setTaskNotice] = useState('');
     const [taskActionError, setTaskActionError] = useState('');
@@ -445,6 +446,80 @@ export default function SmartFocusUI() {
         }
     };
 
+    const handleUpdateTask = async (taskToUpdate, updates) => {
+        const taskId = taskToUpdate?.id ?? taskToUpdate?.taskId;
+        const taskTitle = taskToUpdate?.title ?? taskToUpdate?.name ?? 'Untitled Task';
+
+        if (taskId == null) {
+            setTaskActionError('This task cannot be updated because it does not have a task ID.');
+            return false;
+        }
+
+        setUpdatingTaskId(taskId);
+        setTaskActionError('');
+        setTaskActionNotice('');
+
+        try {
+            const updatedTask = await updateTask(taskId, updates);
+            if (!updatedTask) {
+                throw new Error('The given task could not be found. Refresh your task list and try again.');
+            }
+
+            setTask((currentTask) => {
+                if (!currentTask || String(currentTask.id) !== String(taskId)) {
+                    return currentTask;
+                }
+
+                const hasOwn = (key) => Object.prototype.hasOwnProperty.call(updatedTask, key);
+                const nextDueDate = hasOwn('dueDate')
+                    ? updatedTask.dueDate
+                    : hasOwn('due_date')
+                        ? updatedTask.due_date
+                        : updates.due_date ?? updates.dueDate ?? currentTask.dueDate;
+                const nextDescription = hasOwn('description')
+                    ? updatedTask.description
+                    : updates.description ?? currentTask.description;
+                const nextIsComplete = updatedTask.nextIsComplete
+                    ?? updatedTask.is_complete
+                    ?? updates.is_complete
+                    ?? updates.is_complete
+                    ?? currentTask.isComplete;
+
+                return {
+                    ...currentTask,
+                    ...updatedTask,
+                    title: updatedTask.title ?? updates.title ?? currentTask.title,
+                    description: nextDescription,
+                    dueDate: nextDueDate,
+                    isComplete: Boolean(nextIsComplete),
+                };
+            });
+
+            if (updates.is_complete !== undefined || updates.isComplete !== undefined) {
+                const isNowComplete = Boolean(updates.is_complete ?? updates.isComplete);
+                setTaskActionNotice(
+                    isNowComplete
+                        ? `Marked "${taskTitle}" as completed.`
+                        : `Reopened "${taskTitle}".`,
+                );
+            } else {
+                setTaskActionNotice(`Updated "${updates.title?.trim() || taskTitle}".`);
+            }
+
+            setTaskRefreshSignal((currentSignal) => currentSignal + 1);
+            return true;
+        } catch (requestError) {
+            setTaskActionError(
+                requestError instanceof Error
+                    ? requestError.message
+                    : 'Unable to update your task.',
+            );
+            return false;
+        } finally {
+            setUpdatingTaskId(null);
+        }
+    };
+
     const handleResume = () => {
         if (!hasStartedSession || isActive || remainingSeconds <= 0 || isLoading) return;
         
@@ -482,6 +557,8 @@ export default function SmartFocusUI() {
                 refreshSignal={taskRefreshSignal}
                 onDeleteTask={handleDeleteTask}
                 deletingTaskId={deletingTaskId}
+                onUpdateTask={handleUpdateTask}
+                updatingTaskId={updatingTaskId}
                 taskActionError={taskActionError}
                 taskActionNotice={taskActionNotice}
                 taskActionNoticeFading={isTaskActionNoticeFading}
