@@ -29,6 +29,11 @@ function formatCalendarDate(value) {
     });
 }
 
+function normalizeCurrentStreak(streak) {
+    const value = Number(streak?.currentStreak);
+    return Number.isFinite(value) && value >= 0 ? Math.floor(value) : null;
+}
+
 function normalizeDailyBreakdown(dailyBreakdown) {
     if (!Array.isArray(dailyBreakdown)) return [];
 
@@ -64,6 +69,7 @@ function FocusChartTooltip({ active, payload }) {
 
 export default function FocusStatisticsChart() {
     const [chartData, setChartData] = useState([]);
+    const [currentStreak, setCurrentStreak] = useState(null);
     const [isLoading, setLoading] = useState(true);
     const [error, setError] = useState('');
 
@@ -84,6 +90,7 @@ export default function FocusStatisticsChart() {
                 
                 if (isCurrent) {
                     setChartData(normalizeDailyBreakdown(dailyBreakdown));
+                    setCurrentStreak(normalizeCurrentStreak(insights?.streak));
                 }
             } catch (requestError) {
                 if (isCurrent) {
@@ -118,6 +125,7 @@ export default function FocusStatisticsChart() {
                 throw new Error('The focus statistics repsonse did not contain a daily breakdown.')
             }
             setChartData(normalizeDailyBreakdown(dailyBreakdown));
+            setCurrentStreak(normalizeCurrentStreak(insights?.streak));
         } catch (requestError) {
             setError(
                 requestError instanceof Error
@@ -137,9 +145,18 @@ export default function FocusStatisticsChart() {
                     <p>Daily study hours over the last seven days</p>
                 </div>
                 {!isLoading && !error && chartData.length > 0 && (
-                    <div className="focus-statistics-total">
-                        <strong>{totalFocusHours.toFixed(1)} hrs </strong>
-                        <spand>this week</spand>
+                    <div className="focus-statistics-header-metrics">
+                        <div className="focus-streak-counter">
+                            <span className="focus-streak-flame">🔥</span>
+                            <span className="focus-streak-copy">
+                                <strong className="focus-streak-number">{currentStreak ?? '—'}</strong>
+                                <span className="focus-streak-label">day streak</span>
+                            </span>
+                        </div>
+                        <div className="focus-statistics-total">
+                            <strong>{totalFocusHours.toFixed(1)} hrs </strong>
+                            <span>this week</span>
+                        </div>
                     </div>
                 )}
             </div>

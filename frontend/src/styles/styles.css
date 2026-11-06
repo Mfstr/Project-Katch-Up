@@ -1310,6 +1310,51 @@ button.settings-task-trigger:hover {
     line-height: 1.45;
 }
 
+.focus-statisics-header-metrics {
+    display: flex;
+    flex: 0 0 auto;
+    align-items: center;
+    justify-content: flex-end;
+    gap: clamp(10px, 1.4vw, 18px);
+}
+
+.focus-streak-counter {
+    display: flex;
+    align-items: center;
+    gap: 7px;
+    min-width: 0;
+    padding: 7px 10px;
+    border: 1px solid #f2d7bd;
+    background: #fff8f0;
+}
+
+.focus-streak-flame {
+    flex: 0 0 auto;
+    font-size: clamp(23px, 2vw, 29px);
+    line-height: 1;
+}
+
+.focus-streak-copy {
+    display: grid;
+    gap: 1px;
+    justify-items: start;
+}
+
+.focus-streak-number {
+    color: #c45a20;
+    font: 800 clamp(23px, 1.9vw, 28px)/1 var(--font-heading);
+    font-variant-numeric: tabular-nums;
+}
+
+.focus-streak-label {
+    color: #87512f;
+    font-size: 9px;
+    font-weight: 700;
+    letter-spacing: 0.04em;
+    line-height: 1.2;
+    text-transform: uppercase;
+}
+
 .focus-statistics-toal {
     display: grid;
     flex: 0 0 auto;
