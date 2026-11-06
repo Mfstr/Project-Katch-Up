@@ -126,6 +126,14 @@ button, a, .task-card, .refresh-tasks, .timer-controls button, .start-session, .
     color: var(--text-primary);
 }
 
+.dashboard-header-actions {
+    display: flex;
+    flex: 0 0 auto;
+    align-items: center;
+    justify-content: flex-end;
+    gap: 8px;
+}
+
 .refresh-tasks {
     flex: 0 0 auto;
     border: 1px solid transparent;
@@ -135,6 +143,27 @@ button, a, .task-card, .refresh-tasks, .timer-controls button, .start-session, .
     font-size: 13px;
     font-weight: 600;
     cursor: pointer;
+}
+
+.logout-button {
+    flex: 0 0 auto;
+    border: 1px solid var(--danger-color);
+    color: var(--danger-color);
+    background: var(--surface-color);
+    padding: 11px 15px;
+    font-size: 13px;
+    font-weight: 600;
+    cursor: pointer;
+}
+
+.logout-button:hover {
+    color: var(--surface-color);
+    background: var(--danger-color);
+}
+
+.logout-button:focus-visible {
+    outline: 3px solid color-mix(in srgb, var(--danger-color) 28%, transparent);
+    outline-offset: 2px;
 }
 
 .task-list-panel {

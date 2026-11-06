@@ -129,6 +129,7 @@ export default function Dashboard({
     taskActionNotice = '',
     taskActionNoticeFading = false,
     isYoutubePlayerEnabled = true,
+    onLogout,
 }) {
     const [tasks, setTasks] = useState([]);
     const [isLoading, setLoading] = useState(false);
@@ -270,14 +271,23 @@ export default function Dashboard({
                     <h1 id="dashboard-heading">Your Tasks</h1>
                 </div>
 
-                <button
-                    type="button"
-                    className="refresh-tasks"
-                    onClick={loadTasks}
-                    disabled={isLoading}
-                >
-                    {isLoading ? 'Loading...' : 'Refresh Tasks'}
-                </button>
+                <div className="dashboard-header-actions">
+                    <button
+                        type="button"
+                        className="refresh-tasks"
+                        onClick={loadTasks}
+                        disabled={isLoading}
+                    >
+                        {isLoading ? 'Loading...' : 'Refresh Tasks'}
+                    </button>
+                    <button
+                        type="button"
+                        className="logout-button"
+                        onClick={onLogout}
+                    >
+                        Log Out
+                    </button>
+                </div>
             </div>
 
             <div className="task-view-tabs" role="tablist">
