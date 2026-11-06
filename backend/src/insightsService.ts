@@ -92,6 +92,9 @@ export interface CreateSessionInput {
 
 /**
  * Normalizes a database row from pomodoro_sessions into a standard NormalizedSession.
+ *
+ * @param row - Raw database record from Supabase table pomodoro_sessions.
+ * @returns The standardized NormalizedSession object.
  */
 export function normalizeSessionRow(row: Record<string, unknown>): NormalizedSession {
   const rawType = String(row['session_type'] ?? 'focus').toLowerCase();
@@ -158,6 +161,10 @@ export function normalizeSessionRow(row: Record<string, unknown>): NormalizedSes
 
 /**
  * Pure function: Calculates daily streak metrics based on completed focus sessions.
+ *
+ * @param sessions - Collection of normalized user Pomodoro sessions.
+ * @param referenceDate - Baseline date for computing current and consecutive day streaks (defaults to now).
+ * @returns StreakCounter object with current streak, longest streak, last active date, and today completion flag.
  */
 export function calculateStreak(
   sessions: NormalizedSession[],
@@ -256,6 +263,11 @@ export function calculateStreak(
 
 /**
  * Pure function: Computes focus statistics and daily chart breakdowns.
+ *
+ * @param sessions - Collection of normalized user Pomodoro sessions.
+ * @param daysCount - Number of trailing days to compute in the daily breakdown (default: 7).
+ * @param referenceDate - End boundary date for the statistical aggregation window (default: now).
+ * @returns FocusStatistics object containing cumulative minutes, completion rates, and daily breakdowns.
  */
 export function calculateFocusStatistics(
   sessions: NormalizedSession[],
@@ -362,6 +374,11 @@ export function calculateFocusStatistics(
 
 /**
  * Pure function: Analyzes session patterns and generates actionable recommendations.
+ *
+ * @param sessions - Collection of normalized user Pomodoro sessions.
+ * @param preferences - Active user configuration for focus and break intervals.
+ * @param referenceDate - Reference date for evaluating recent activity (default: now).
+ * @returns Array of prioritized InsightRecommendation objects with suggestions and actions.
  */
 export function analyzeSessionPatterns(
   sessions: NormalizedSession[],
@@ -546,6 +563,11 @@ export function analyzeSessionPatterns(
 
 /**
  * Service function: Retrieves sessions for a user from Supabase.
+ *
+ * @param profileId - The UUID or identifier of the user profile.
+ * @param limit - Maximum number of recent sessions to retrieve (default: 100).
+ * @returns Array of normalized user Pomodoro sessions.
+ * @throws {Error} If database querying encounters an error.
  */
 export async function getUserSessions(
   profileId: string,
@@ -571,6 +593,9 @@ export async function getUserSessions(
 
 /**
  * Service function: Retrieves user profile preferences.
+ *
+ * @param profileId - The UUID or identifier of the user profile.
+ * @returns UserPreferences object with focus interval, break interval, and pomodoro cycle settings.
  */
 export async function getUserPreferences(profileId: string): Promise<UserPreferences> {
   const { data, error } = await supabase
@@ -596,6 +621,11 @@ export async function getUserPreferences(profileId: string): Promise<UserPrefere
 
 /**
  * Service function: Applies an insight recommendation or update to user profile settings.
+ *
+ * @param profileId - The UUID or identifier of the user profile.
+ * @param action - The setting target ('break_interval', 'focus_interval', or 'pomodoro_cycles') and its new integer value.
+ * @returns Object indicating success and containing the dictionary of updated settings.
+ * @throws {Error} If the target is invalid, the value is out of bounds, or updating Supabase fails.
  */
 export async function applyRecommendation(
   profileId: string,
@@ -644,6 +674,11 @@ export async function applyRecommendation(
 
 /**
  * Service function: Records a pomodoro session into the database.
+ *
+ * @param profileId - The UUID or identifier of the user profile.
+ * @param input - Attributes of the completed or interrupted session.
+ * @returns The normalized session record persisted in the database.
+ * @throws {Error} If inserting the session into Supabase fails.
  */
 export async function recordSession(
   profileId: string,
@@ -719,6 +754,11 @@ export async function recordSession(
 
 /**
  * Main insights orchestrator: analyzes sessions and returns recommendations, stats, and streak.
+ *
+ * @param profileId - The UUID or identifier of the user profile.
+ * @param daysCount - Number of trailing days to analyze (default: 7).
+ * @param referenceDate - Reference boundary date for calculating insights (default: now).
+ * @returns Comprehensive TimerInsights containing recommendations, focus statistics, streak counters, and preferences.
  */
 export async function getTimerInsights(
   profileId: string,

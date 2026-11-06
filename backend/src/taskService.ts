@@ -39,6 +39,13 @@ export interface TaskResponse {
   deleted_at?: string | null;
 }
 
+/**
+ * Inserts a new task for an authenticated user, falling back to provision the user profile if necessary.
+ *
+ * @param task - Task attributes including title, optional description, due date, completion status, and profile ID.
+ * @returns The newly created and normalized task response record.
+ * @throws {Error} If task creation fails in Supabase.
+ */
 export const createTask = async (task: CreateTaskInput | TaskInsert): Promise<TaskResponse> => {
   const insertPayload: TaskInsert = {
     title: task.title ?? null,
@@ -95,6 +102,14 @@ export const createTask = async (task: CreateTaskInput | TaskInsert): Promise<Ta
   };
 };
 
+/**
+ * Updates an existing task by ID with normalized database field mappings.
+ *
+ * @param id - Numeric ID of the task to update.
+ * @param updates - Partial task properties to update (e.g. title, description, dueDate, isComplete).
+ * @returns The updated task response record, or null if the task was not found.
+ * @throws {Error} If the database update fails.
+ */
 export const updateTask = async (
   id: number,
   updates: UpdateTaskInput,
@@ -141,6 +156,13 @@ export const updateTask = async (
     : null;
 };
 
+/**
+ * Soft deletes a task by setting its deleted_at timestamp to the current ISO date.
+ *
+ * @param id - Numeric ID of the task to soft delete.
+ * @returns Resolves when the task is marked deleted.
+ * @throws {Error} If the soft delete update fails in Supabase.
+ */
 export const softDeleteTask = async (id: number): Promise<void> => {
   const { error } = await supabase
     .from('tasks')
@@ -150,6 +172,13 @@ export const softDeleteTask = async (id: number): Promise<void> => {
   if (error) throw new Error(`Failed to delete task: ${error.message}`);
 };
 
+/**
+ * Retrieves the next urgent, non-deleted, and incomplete task for a user ordered by earliest due date.
+ *
+ * @param profileId - Optional user profile ID filter.
+ * @returns The next pending task record, or null if no tasks are available.
+ * @throws {Error} If database querying encounters an unexpected error.
+ */
 export const getNextTask = async (profileId?: string): Promise<TaskResponse | null> => {
   let query = supabase
     .from('tasks')
@@ -182,6 +211,13 @@ export const getNextTask = async (profileId?: string): Promise<TaskResponse | nu
     : null;
 };
 
+/**
+ * Fetches all non-deleted tasks, optionally filtered by user profile ID, ordered by due date ascending.
+ *
+ * @param profileId - Optional user profile ID filter.
+ * @returns An array of normalized task response objects.
+ * @throws {Error} If retrieving tasks from Supabase fails.
+ */
 export const getAllTasks = async (profileId?: string): Promise<TaskResponse[]> => {
   let query = supabase
     .from('tasks')

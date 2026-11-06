@@ -8,6 +8,11 @@ export interface ReadinessStatus {
   error?: string | undefined;
 }
 
+/**
+ * Pings the database to verify connectivity and responsiveness.
+ *
+ * @returns An object indicating whether the connection succeeded and any error message encountered.
+ */
 export async function pingSupabase(): Promise<{ ok: boolean; error?: string }> {
   try {
     const { error } = await supabase.from('tasks').select('id').limit(1);
@@ -21,6 +26,11 @@ export async function pingSupabase(): Promise<{ ok: boolean; error?: string }> {
   }
 }
 
+/**
+ * Executes a readiness probe evaluating database connectivity.
+ *
+ * @returns A ReadinessStatus object with status ('ready' or 'unavailable'), database state, and ISO timestamp.
+ */
 export async function checkReadiness(): Promise<ReadinessStatus> {
   const ping = await pingSupabase();
   const timestamp = new Date().toISOString();
