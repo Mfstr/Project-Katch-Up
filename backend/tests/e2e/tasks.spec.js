@@ -14,10 +14,9 @@ test.describe('Task Management E2E Suite', () => {
     await page.fill('input[type="password"]', testPassword);
     
     await Promise.all([
-      page.waitForResponse(res => res.url().includes('/api/auth/login') && res.status() === 200),
+      page.waitForURL(/\/dashboard$/, { timeout: 15000 }),
       page.click('button[type="submit"]:has-text("Sign In"), button[type="submit"]:has-text("Login")'),
     ]);
-    await page.waitForURL(/\/(dashboard)?$/, { timeout: 10000 });
 
     // 2. Open the task manager panel
     const taskTriggerBtn = page.locator('button.settings-task-trigger');
@@ -39,20 +38,26 @@ test.describe('Task Management E2E Suite', () => {
       await dueDateInput.fill(taskDueDate);
     }
 
-    // 4. Hit the add task button to add it to the task list
+    // 4. Hit the add task button and wait for Supabase REST task insertion
     const submitTaskBtn = page.locator('button.task-manager-add-button');
     const [createRes] = await Promise.all([
-      page.waitForResponse(res => res.url().includes('/api/tasks') && (res.status() === 200 || res.status() === 201)),
+      page.waitForResponse(res => (res.url().includes('/rest/v1/tasks') || res.url().includes('/api/tasks')) && (res.status() === 200 || res.status() === 201)),
       submitTaskBtn.click(),
     ]);
     expect(createRes.ok()).toBeTruthy();
 
-    // 5. Select the add a task button again to close the task menu
+    // 5. Click the task trigger button again to close the task creation menu
     await taskTriggerBtn.click();
 
-    // 6. Select the task in the task list view
-    const taskItem = page.locator(`text=${taskTitle}`).first();
-    await expect(taskItem).toBeVisible();
+    // Optional: Click the dashboard refresh button to instantly sync the Supabase task list
+    const refreshBtn = page.locator('button.refresh-tasks');
+    if (await refreshBtn.isVisible()) {
+      await refreshBtn.click();
+    }
+
+    // 6. Select the task in the task list view using a precise card title selector
+    const taskItem = page.locator('.task-card-title', { hasText: taskTitle }).first();
+    await expect(taskItem).toBeVisible({ timeout: 10000 });
     await taskItem.click();
 
     // 7. Handle native browser confirmation dialog triggered by handleDeleteTask
@@ -68,7 +73,7 @@ test.describe('Task Management E2E Suite', () => {
     await expect(deleteBtn).toBeVisible({ timeout: 5000 });
 
     const [deleteRes] = await Promise.all([
-      page.waitForResponse(res => res.url().includes('/api/tasks/') && res.request().method() === 'DELETE'),
+      page.waitForResponse(res => (res.url().includes('/rest/v1/tasks') || res.url().includes('/api/tasks/')) && res.request().method() === 'DELETE'),
       deleteBtn.click(),
     ]);
     expect(deleteRes.ok()).toBeTruthy();
