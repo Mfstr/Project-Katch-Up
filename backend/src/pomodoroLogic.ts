@@ -54,6 +54,12 @@ export class PomodoroTimer {
     this.currentPlannedDurationSeconds = Math.round(this.remainingMs / 1000);
   }
 
+  /**
+   * Starts or resumes the Pomodoro timer countdown.
+   *
+   * @param options - Optional configuration specifying custom duration in seconds or an associated task ID.
+   * @returns Unix epoch timestamp in milliseconds when the phase will complete, or null if already active.
+   */
   public start(options?: {
     taskId?: number | null | undefined;
     durationSeconds?: number | undefined;
@@ -73,6 +79,11 @@ export class PomodoroTimer {
     return this.endTime;
   }
 
+  /**
+   * Pauses an active timer and preserves remaining countdown duration.
+   *
+   * @returns The remaining duration in integer seconds, or null if the timer was not active.
+   */
   public pause(): number | null {
     if (this.isActive && this.endTime !== null) {
       this.remainingMs = Math.max(0, this.endTime - Date.now());
@@ -84,9 +95,10 @@ export class PomodoroTimer {
   }
 
   /**
-   * Called when a phase naturally completes. Advances to the next phase and
-   * increments the pomodoro count after each FOCUS session.
-   * Returns the new phase so callers can notify clients.
+   * Completes the current timer phase, records session history, and advances to the next phase.
+   * Increments pomodoro count on FOCUS completion and cycles to SHORT_BREAK or LONG_BREAK.
+   *
+   * @returns The newly active TimerPhase ('FOCUS', 'SHORT_BREAK', or 'LONG_BREAK').
    */
   public complete(): TimerPhase {
     const completedPhase = this.currentPhase;
@@ -133,10 +145,20 @@ export class PomodoroTimer {
     return this.currentPhase;
   }
 
+  /**
+   * Retrieves the most recently completed session record, if any.
+   *
+   * @returns The last completed SessionRecord or null.
+   */
   public getLastCompletedSession(): SessionRecord | null {
     return this.lastSessionRecord;
   }
 
+  /**
+   * Computes the current real-time snapshot status of the timer.
+   *
+   * @returns Current TimerStatus object containing phase, remaining seconds, active flag, and timestamps.
+   */
   public getStatus(): TimerStatus {
     let remaining = this.remainingMs;
 
@@ -160,6 +182,11 @@ export class PomodoroTimer {
     };
   }
 
+  /**
+   * Resets the timer back to the initial FOCUS state and creates an interrupted session record if active.
+   *
+   * @returns An interrupted SessionRecord if an active session of 5+ seconds was aborted, otherwise null.
+   */
   public reset(): SessionRecord | null {
     let interruptedRecord: SessionRecord | null = null;
 

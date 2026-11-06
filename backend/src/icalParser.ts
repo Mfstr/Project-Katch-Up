@@ -8,7 +8,13 @@ interface TaskUpsert {
   is_complete: boolean;
 }
 
-/** Returns the number of tasks upserted. */
+/**
+ * Fetches an external iCal calendar feed from a URL and upserts upcoming events as tasks.
+ *
+ * @param url - The remote HTTP(S) URL of the iCal feed.
+ * @returns The count of upcoming event tasks successfully parsed and upserted.
+ * @throws {Error} If fetching the feed fails or Supabase upsert encounters an error.
+ */
 export const syncCalendar = async (url: string): Promise<number> => {
   const response = await fetch(url);
 
