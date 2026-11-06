@@ -15,6 +15,7 @@ import StartSessionButton from './StartSessionButton.jsx';
 import Dashboard from './Dashboard.jsx';
 import PomodoroTimer from './PomodoroTimer.jsx';
 import SettingsPanel from './SettingsPanel.jsx';
+import InsightAlert from './InsightAlert.jsx';
 
 const DEFAULT_FOCUS_SECONDS = 20 * 60;
 const SHORT_BREAK_SECONDS = 5 * 60;
@@ -549,74 +550,76 @@ export default function SmartFocusUI() {
     };
 
     return (
-        <main className={`smart-focus-ui workspace-background-${background}`}>
-            <Dashboard
-                selectedTask={task}
-                taskSelectionDisabled={hasStartedSession}
-                onSelectTask={handleSelectTask}
-                refreshSignal={taskRefreshSignal}
-                onDeleteTask={handleDeleteTask}
-                deletingTaskId={deletingTaskId}
-                onUpdateTask={handleUpdateTask}
-                updatingTaskId={updatingTaskId}
-                taskActionError={taskActionError}
-                taskActionNotice={taskActionNotice}
-                taskActionNoticeFading={isTaskActionNoticeFading}
-                isYoutubePlayerEnabled={isYoutubePlayerEnabled}
-            />
-
-            <SettingsPanel 
-                background={background}
-                onBackgroundChange={handleBackgroundChange}
-                isYoutubePlayerEnabled={isYoutubePlayerEnabled}
-                onYoutubePlayerToggle={handleYoutubePlayerToggle}
-                isTaskManagerOpen={isTaskManagerOpen}
-                taskForm={taskForm}
-                isCreatingTask={isCreatingTask}
-                taskError={taskError}
-                taskNotice={taskNotice}
-                taskNoticeFading={isTaskNoticeFading}
-                onTaskManagerToggle={handleTaskManagerToggle}
-                onTaskManagerClose={handleTaskManagerClose}
-                onTaskFormChange={handleTaskFormChange}
-                onCreateTask={handleCreateTask}
-            />
-            
-            <div className="smart-focus-session-button">
-                <StartSessionButton
-                    onClick={startSession}
-                    loading={isLoading}
-                    disabled={isActive || hasStartedSession || !task}
+        <>
+            <InsightAlert />
+            <main className={`smart-focus-ui workspace-background-${background}`}>
+                <Dashboard
+                    selectedTask={task}
+                    taskSelectionDisabled={hasStartedSession}
+                    onSelectTask={handleSelectTask}
+                    refreshSignal={taskRefreshSignal}
+                    onDeleteTask={handleDeleteTask}
+                    deletingTaskId={deletingTaskId}
+                    onUpdateTask={handleUpdateTask}
+                    updatingTaskId={updatingTaskId}
+                    taskActionError={taskActionError}
+                    taskActionNotice={taskActionNotice}
+                    taskActionNoticeFading={isTaskActionNoticeFading}
+                    isYoutubePlayerEnabled={isYoutubePlayerEnabled}
                 />
-            </div>
 
-            {error && (
-                <div className="smart-focus-error" role="alert">
-                    {error}
-                </div>
-            )}
-
-            {message && !error && (
-                <div className={`smart-focus-message auto-dismiss-notice${isMessageFading ? ' is-fading' : ''}`} role="status">
-                    {message}
-                </div>
-            )}
-
-            <PomodoroTimer
-                task={task}
-                phase={phase}
-                remainingSeconds={remainingSeconds}
-                isActive={isActive}
-                isLoading={isLoading}
-                sessionCompleted={sessionCompleted}
-                error={''}
-                onResume={handleResume}
-                canResume={hasStartedSession && !isActive && remainingSeconds > 0 && !sessionCompleted}
-                onPause={handlePause}
-                onStop={handleStop}
-                onReset={handleReset}
-            />
+                <SettingsPanel 
+                    background={background}
+                    onBackgroundChange={handleBackgroundChange}
+                    isYoutubePlayerEnabled={isYoutubePlayerEnabled}
+                    onYoutubePlayerToggle={handleYoutubePlayerToggle}
+                    isTaskManagerOpen={isTaskManagerOpen}
+                    taskForm={taskForm}
+                    isCreatingTask={isCreatingTask}
+                    taskError={taskError}
+                    taskNotice={taskNotice}
+                    taskNoticeFading={isTaskNoticeFading}
+                    onTaskManagerToggle={handleTaskManagerToggle}
+                    onTaskManagerClose={handleTaskManagerClose}
+                    onTaskFormChange={handleTaskFormChange}
+                    onCreateTask={handleCreateTask}
+                />
             
-        </main>
+                <div className="smart-focus-session-button">
+                    <StartSessionButton
+                        onClick={startSession}
+                        loading={isLoading}
+                        disabled={isActive || hasStartedSession || !task}
+                    />
+                </div>
+
+                {error && (
+                    <div className="smart-focus-error" role="alert">
+                        {error}
+                    </div>
+                )}
+
+                {message && !error && (
+                    <div className={`smart-focus-message auto-dismiss-notice${isMessageFading ? ' is-fading' : ''}`} role="status">
+                        {message}
+                    </div>
+                )}
+
+                <PomodoroTimer
+                    task={task}
+                    phase={phase}
+                    remainingSeconds={remainingSeconds}
+                    isActive={isActive}
+                    isLoading={isLoading}
+                    sessionCompleted={sessionCompleted}
+                    error={''}
+                    onResume={handleResume}
+                    canResume={hasStartedSession && !isActive && remainingSeconds > 0 && !sessionCompleted}
+                    onPause={handlePause}
+                    onStop={handleStop}
+                    onReset={handleReset}
+                />
+            </main>
+        </>
     );
 }
