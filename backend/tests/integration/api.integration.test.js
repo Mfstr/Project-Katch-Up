@@ -237,99 +237,96 @@ describe('Server Error Catch Blocks & Global Error Handler', () => {
     expect(res.body).toHaveProperty('error');
   });
 });
-it('GET /api/tasks returns list of tasks for authenticated user', async () => {
-  const mockTasks = [{ id: 1, title: 'Test Task', dueDate: '2026-10-20', isComplete: false }];
-  getAllTasks.mockResolvedValueOnce(mockTasks);
 
-  const response = await request(app).get('/api/tasks');
-  expect(response.status).toBe(200);
-  expect(response.body).toEqual(mockTasks);
-  expect(getAllTasks).toHaveBeenCalledWith('test-user-id');
-});
+describe('Task Management Routes', () => {
+  it('GET /api/tasks returns list of tasks for authenticated user', async () => {
+    const mockTasks = [{ id: 1, title: 'Test Task', dueDate: '2026-10-20', isComplete: false }];
+    getAllTasks.mockResolvedValueOnce(mockTasks);
 
-it('POST /api/tasks creates a task with valid data', async () => {
-  const newTask = { title: 'New manual task', description: 'Task notes' };
-  const createdTask = { id: 101, ...newTask, isComplete: false, profile_id: 'test-user-id' };
-  createTask.mockResolvedValueOnce(createdTask);
+    const response = await request(app).get('/api/tasks');
+    expect(response.status).toBe(200);
+    expect(response.body).toEqual(mockTasks);
+    expect(getAllTasks).toHaveBeenCalledWith('test-user-id');
+  });
 
-  const response = await request(app).post('/api/tasks').send(newTask);
+  it('POST /api/tasks creates a task with valid data', async () => {
+    const newTask = { title: 'New manual task', description: 'Task notes' };
+    const createdTask = { id: 101, ...newTask, isComplete: false, profile_id: 'test-user-id' };
+    createTask.mockResolvedValueOnce(createdTask);
 
-  expect(response.status).toBe(201);
-  expect(response.body).toEqual(createdTask);
-  expect(createTask).toHaveBeenCalledWith(
-    expect.objectContaining({
-      title: 'New manual task',
-      profile_id: 'test-user-id',
-    }),
-  );
-});
+    const response = await request(app).post('/api/tasks').send(newTask);
 
-it('POST /api/tasks rejects requests with missing or empty title', async () => {
-  const response = await request(app).post('/api/tasks').send({ description: 'No title' });
+    expect(response.status).toBe(201);
+    expect(response.body).toEqual(createdTask);
+    expect(createTask).toHaveBeenCalledWith(
+      expect.objectContaining({
+        title: 'New manual task',
+        profile_id: 'test-user-id',
+      }),
+    );
+  });
 
-  expect(response.status).toBe(400);
-  expect(response.body).toEqual({ error: 'title is required.' });
-});
+  it('POST /api/tasks rejects requests with missing or empty title', async () => {
+    const response = await request(app).post('/api/tasks').send({ description: 'No title' });
 
-it('PUT /api/tasks/:id updates a task successfully', async () => {
-  const updates = { title: 'Updated title', isComplete: true };
-  const updatedTask = { id: 10, title: 'Updated title', isComplete: true };
-  updateTask.mockResolvedValueOnce(updatedTask);
+    expect(response.status).toBe(400);
+    expect(response.body).toEqual({ error: 'title is required.' });
+  });
 
-  const response = await request(app).put('/api/tasks/10').send(updates);
+  it('PUT /api/tasks/:id updates a task successfully', async () => {
+    const updates = { title: 'Updated title', isComplete: true };
+    const updatedTask = { id: 10, title: 'Updated title', isComplete: true };
+    updateTask.mockResolvedValueOnce(updatedTask);
 
-  expect(response.status).toBe(200);
-  expect(response.body).toEqual(updatedTask);
-  expect(updateTask).toHaveBeenCalledWith(10, updates);
-});
+    const response = await request(app).put('/api/tasks/10').send(updates);
 
-it('PUT /api/tasks/:id rejects invalid non-numeric IDs', async () => {
-  const response = await request(app).put('/api/tasks/xyz').send({ title: 'New Title' });
+    expect(response.status).toBe(200);
+    expect(response.body).toEqual(updatedTask);
+    expect(updateTask).toHaveBeenCalledWith(10, updates);
+  });
 
-  expect(response.status).toBe(400);
-  expect(response.body.error).toBe('Invalid task ID');
-});
+  it('PUT /api/tasks/:id rejects invalid non-numeric IDs', async () => {
+    const response = await request(app).put('/api/tasks/xyz').send({ title: 'New Title' });
 
-it('PUT /api/tasks/:id returns 404 when task does not exist', async () => {
-  updateTask.mockResolvedValueOnce(null);
+    expect(response.status).toBe(400);
+    expect(response.body.error).toBe('Invalid task ID');
+  });
 
-  const response = await request(app).put('/api/tasks/999').send({ title: 'Non-existent task' });
+  it('PUT /api/tasks/:id returns 404 when task does not exist', async () => {
+    updateTask.mockResolvedValueOnce(null);
 
-  expect(response.status).toBe(404);
-  expect(response.body.error).toBe('Task not found');
-});
+    const response = await request(app).put('/api/tasks/999').send({ title: 'Non-existent task' });
 
-it('GET /api/tasks returns 500 when service fails', async () => {
-  getAllTasks.mockRejectedValueOnce(new Error('Database offline'));
+    expect(response.status).toBe(404);
+    expect(response.body.error).toBe('Task not found');
+  });
 
-  const response = await request(app).get('/api/tasks');
-  expect(response.status).toBe(500);
-  expect(response.body).toEqual({ error: 'Database offline' });
-});
+  it('GET /api/tasks returns 500 when service fails', async () => {
+    getAllTasks.mockRejectedValueOnce(new Error('Database offline'));
 
-it('GET /api/tasks/next returns next task when available', async () => {
-  const nextTask = { id: 2, title: 'Upcoming Task' };
-  const { getNextTask } = await import('../../src/taskService.js');
-  getNextTask.mockResolvedValueOnce(nextTask);
+    const response = await request(app).get('/api/tasks');
+    expect(response.status).toBe(500);
+    expect(response.body).toEqual({ error: 'Database offline' });
+  });
 
-  const response = await request(app).get('/api/tasks/next');
-  expect(response.status).toBe(200);
-  expect(response.body).toEqual(nextTask);
-});
+  it('GET /api/tasks/next returns next task when available', async () => {
+    const nextTask = { id: 2, title: 'Upcoming Task' };
+    const { getNextTask } = await import('../../src/taskService.js');
+    getNextTask.mockResolvedValueOnce(nextTask);
 
-it('GET /api/tasks/next returns 404 when no upcoming tasks exist', async () => {
-  const { getNextTask } = await import('../../src/taskService.js');
-  getNextTask.mockResolvedValueOnce(null);
+    const response = await request(app).get('/api/tasks/next');
+    expect(response.status).toBe(200);
+    expect(response.body).toEqual(nextTask);
+  });
 
-  const response = await request(app).get('/api/tasks/next');
-  expect(response.status).toBe(404);
-  expect(response.body).toEqual({ error: 'No upcoming tasks found.' });
-});
+  it('GET /api/tasks/next returns 404 when no upcoming tasks exist', async () => {
+    const { getNextTask } = await import('../../src/taskService.js');
+    getNextTask.mockResolvedValueOnce(null);
 
-it('POST /api/tasks returns 500 when createTask fails', async () => {
-  createTask.mockRejectedValueOnce(new Error('Insert error'));
-
-  const response = await request(app).post('/api/tasks').send({ title: 'Valid title' });
+    const response = await request(app).get('/api/tasks/next');
+    expect(response.status).toBe(404);
+    expect(response.body).toEqual({ error: 'No upcoming tasks found.' });
+  });
 
   it('GET /api/tasks/next returns 500 when getNextTask service fails', async () => {
     const { getNextTask } = await import('../../src/taskService.js');
@@ -343,24 +340,31 @@ it('POST /api/tasks returns 500 when createTask fails', async () => {
   it('POST /api/tasks returns 500 when createTask fails', async () => {
     createTask.mockRejectedValueOnce(new Error('Insert error'));
 
-it('PUT /api/tasks/:id returns 500 when updateTask fails', async () => {
-  updateTask.mockRejectedValueOnce(new Error('Update failed in db'));
+    const response = await request(app).post('/api/tasks').send({ title: 'Valid title' });
 
-  const response = await request(app).put('/api/tasks/10').send({ title: 'New title' });
+    expect(response.status).toBe(500);
+    expect(response.body).toEqual({ error: 'Insert error' });
+  });
 
-  expect(response.status).toBe(500);
-  expect(response.body).toEqual({ error: 'Update failed in db' });
-});
+  it('PUT /api/tasks/:id returns 500 when updateTask fails', async () => {
+    updateTask.mockRejectedValueOnce(new Error('Update failed in db'));
 
-it('DELETE /api/tasks/:id handles valid task soft-delete', async () => {
-  const response = await request(app).delete('/api/tasks/10');
-  expect(response.status).toBe(204);
-});
+    const response = await request(app).put('/api/tasks/10').send({ title: 'New title' });
 
-it('DELETE /api/tasks/:id rejects invalid non-numeric IDs', async () => {
-  const response = await request(app).delete('/api/tasks/abc');
-  expect(response.status).toBe(400);
-  expect(response.body.error).toBe('Invalid task ID');
+    expect(response.status).toBe(500);
+    expect(response.body).toEqual({ error: 'Update failed in db' });
+  });
+
+  it('DELETE /api/tasks/:id handles valid task soft-delete', async () => {
+    const response = await request(app).delete('/api/tasks/10');
+    expect(response.status).toBe(204);
+  });
+
+  it('DELETE /api/tasks/:id rejects invalid non-numeric IDs', async () => {
+    const response = await request(app).delete('/api/tasks/abc');
+    expect(response.status).toBe(400);
+    expect(response.body.error).toBe('Invalid task ID');
+  });
 });
 
 describe('Feature Flag Integration on Routes', () => {
@@ -391,6 +395,7 @@ describe('Feature Flag Integration on Routes', () => {
     const response = await request(app).get('/api/calendars');
     expect(response.status).toBe(200);
   });
+});
 
   describe('Auth Routes - Logout', () => {
     it('POST /api/auth/logout logs out user successfully', async () => {
