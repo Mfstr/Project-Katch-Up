@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { getTasks } from '../services/apiClient.js';
+import FocusStatisicsChart from './FocusStatisticsChart.jsx';
 
 function normalizeTasks(task) {
     return {
@@ -528,6 +529,8 @@ export default function Dashboard({
                     </section>
                 ))}
             </div>
+
+            <FocusStatisicsChart />
 
             {isYoutubePlayerEnabled && (
                 <section className="dashboard-youtube-music">
