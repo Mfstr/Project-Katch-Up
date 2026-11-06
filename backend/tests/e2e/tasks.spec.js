@@ -1,55 +1,79 @@
 import { test, expect } from '@playwright/test';
 
-test.describe('Task Management E2E Flow', () => {
+test.describe('Task Management E2E Suite', () => {
   const testEmail = 'e2e-tester@example.com';
   const testPassword = 'testPassword';
-  const taskTitle = `E2E Test Task - ${Date.now()}`;
+  const taskTitle = `E2E Task ${Date.now()}`;
+  const taskDescription = 'Automated end-to-end task integration test description.';
+  const taskDueDate = '2026-12-31';
 
-  test('should allow a user to open task manager, add a task, view it, and delete it', async ({ page }) => {
-    // 1. Log in with an existing dedicated test user account
-    await page.goto('/login'); // Adjust URL if your login route is different (e.g., '/' or '/signin')
+  test('should create, view, select, and delete tasks cleanly', async ({ page }) => {
+    // 1. Log in with the static test user account
+    await page.goto('/login');
+    await page.fill('input[type="email"]', testEmail);
+    await page.fill('input[type="password"]', testPassword);
     
-    // If your app logs in directly on the home page or a login page, adjust accordingly:
-    const emailInput = page.locator('input[type="email"]');
-    if (await emailInput.isVisible()) {
-      await emailInput.fill(testEmail);
-      await page.fill('input[type="password"]', testPassword);
-      await page.click('button[type="submit"]:has-text("Sign In"), button[type="submit"]:has-text("Login")');
+    await Promise.all([
+      page.waitForResponse(res => res.url().includes('/api/auth/login') && res.status() === 200),
+      page.click('button[type="submit"]:has-text("Sign In"), button[type="submit"]:has-text("Login")'),
+    ]);
+    await page.waitForURL(/\/(dashboard)?$/, { timeout: 10000 });
+
+    // 2. Open the task manager panel
+    const taskTriggerBtn = page.locator('button.settings-task-trigger');
+    await expect(taskTriggerBtn).toBeVisible();
+    await taskTriggerBtn.click();
+
+    // 3. Fill out the task menu: Name (Title), Description, and Calendar Due Date
+    const titleInput = page.locator('#new-task-title');
+    await expect(titleInput).toBeVisible();
+    await titleInput.fill(taskTitle);
+
+    const descriptionInput = page.locator('#new-task-description');
+    if (await descriptionInput.isVisible()) {
+      await descriptionInput.fill(taskDescription);
     }
 
-    // Verify successful redirection to dashboard
-    await expect(page).toHaveURL(/\/(dashboard)?$/);
+    const dueDateInput = page.locator('#new-task-due-date');
+    if (await dueDateInput.isVisible()) {
+      await dueDateInput.fill(taskDueDate);
+    }
 
-    // 2. Open the task manager panel via the settings trigger button
-    await page.click('.settings-task-trigger');
-
-    // Wait for the panel and form to become visible
-    const taskInput = page.locator('#new-task-title');
-    await expect(taskInput).toBeVisible();
-
-    // 3. Fill out the task details and submit while waiting for the API response
-    await taskInput.fill(taskTitle);
-    
-    const [response] = await Promise.all([
-      page.waitForResponse(res => res.url().includes('/api/tasks') && (res.status() === 201 || res.status() === 200)),
-      page.click('.task-manager-add-button'),
+    // 4. Hit the add task button to add it to the task list
+    const submitTaskBtn = page.locator('button.task-manager-add-button');
+    const [createRes] = await Promise.all([
+      page.waitForResponse(res => res.url().includes('/api/tasks') && (res.status() === 200 || res.status() === 201)),
+      submitTaskBtn.click(),
     ]);
+    expect(createRes.ok()).toBeTruthy();
 
-    expect(response.ok()).toBeTruthy();
+    // 5. Select the add a task button again to close the task menu
+    await taskTriggerBtn.click();
 
-    // 4. Close the task manager panel
-    await page.click('.task-manager-close');
+    // 6. Select the task in the task list view
+    const taskItem = page.locator(`text=${taskTitle}`).first();
+    await expect(taskItem).toBeVisible();
+    await taskItem.click();
 
-    // 5. Verify the task appears in the dashboard task list
-    const taskCardTitle = page.locator('.task-card-title', { hasText: taskTitle });
-    await expect(taskCardTitle).toBeVisible();
+    // 7. Handle native browser confirmation dialog triggered by handleDeleteTask
+    page.once('dialog', async dialog => {
+      await dialog.accept();
+    });
 
-    // 6. Delete the task using the dashboard's delete button
-    const taskListItem = page.locator('.task-list-item', { has: taskCardTitle });
-    const deleteButton = taskListItem.locator('.task-delete-button');
-    await deleteButton.click();
+    // Strictly scope the delete button to the specific container enclosing *this exact unique task title*
+    const exactTaskSpan = page.locator(`text="${taskTitle}"`).first();
+    const taskCard = exactTaskSpan.locator('xpath=ancestor::div[contains(@class, "task") or contains(@class, "card") or self::li][1]');
+    const deleteBtn = taskCard.locator('button:has-text("Delete"), button.delete, button.task-delete, [aria-label*="Delete"]').first();
+    
+    await expect(deleteBtn).toBeVisible({ timeout: 5000 });
 
-    // 7. Verify the task is successfully removed from the DOM
-    await expect(taskCardTitle).not.toBeVisible();
+    const [deleteRes] = await Promise.all([
+      page.waitForResponse(res => res.url().includes('/api/tasks/') && res.request().method() === 'DELETE'),
+      deleteBtn.click(),
+    ]);
+    expect(deleteRes.ok()).toBeTruthy();
+
+    // 8. Verify task is successfully removed from the UI
+    await expect(page.locator(`text=${taskTitle}`).first()).not.toBeVisible({ timeout: 5000 });
   });
 });
