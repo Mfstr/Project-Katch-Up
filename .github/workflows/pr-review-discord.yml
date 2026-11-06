@@ -94,6 +94,10 @@ jobs:
           ADDITIONS: ${{ steps.pr_stats.outputs.additions }}
           DELETIONS: ${{ steps.pr_stats.outputs.deletions }}
         run: |
+          if [ -z "$DISCORD_WEBHOOK_URL" ]; then
+            echo "DISCORD_WEBHOOK_URL is not configured or accessible. Skipping Discord notification."
+            exit 0
+          fi
           curl -sS -X POST "$DISCORD_WEBHOOK_URL" \
             -H "Content-Type: application/json" \
             -d @- <<PAYLOAD
@@ -138,6 +142,10 @@ jobs:
           DELETIONS: ${{ steps.push_stats.outputs.deletions }}
           COMMIT_MSG: ${{ steps.push_stats.outputs.commit_msg }}
         run: |
+          if [ -z "$DISCORD_WEBHOOK_URL" ]; then
+            echo "DISCORD_WEBHOOK_URL is not configured or accessible. Skipping Discord notification."
+            exit 0
+          fi
           curl -sS -X POST "$DISCORD_WEBHOOK_URL" \
             -H "Content-Type: application/json" \
             -d @- <<PAYLOAD

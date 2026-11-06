@@ -65,7 +65,28 @@ export const createTask = async (task: CreateTaskInput | TaskInsert): Promise<Ta
 
   const { data, error } = await supabase.from('tasks').insert(insertPayload).select().single();
 
-  if (error) throw new Error(`Failed to create task: ${error.message}`);
+  if (error) {
+    if (
+      typeof error.message === 'string' &&
+      error.message.includes('tasks_profile_id_fkey') &&
+      insertPayload.profile_id
+    ) {
+      try {
+        await supabase.from('profiles').upsert({ id: insertPayload.profile_id }, { onConflict: 'id' });
+        const retry = await supabase.from('tasks').insert(insertPayload).select().single();
+        if (!retry.error && retry.data) {
+          return {
+            ...retry.data,
+            dueDate: retry.data.due_date,
+            isComplete: retry.data.is_complete,
+          };
+        }
+      } catch {
+        // Fall through to throw original error
+      }
+    }
+    throw new Error(`Failed to create task: ${error.message}`);
+  }
 
   return {
     ...data,
@@ -129,13 +150,18 @@ export const softDeleteTask = async (id: number): Promise<void> => {
   if (error) throw new Error(`Failed to delete task: ${error.message}`);
 };
 
-export const getNextTask = async (profileId: string) => {
-  const { data, error } = await supabase
+export const getNextTask = async (profileId?: string): Promise<TaskResponse | null> => {
+  let query = supabase
     .from('tasks')
     .select('*')
-    .eq('profile_id', profileId)
     .is('deleted_at', null)
-    .is('is_complete', false)
+    .is('is_complete', false);
+
+  if (profileId) {
+    query = query.eq('profile_id', profileId);
+  }
+
+  const { data, error } = await query
     .order('due_date', { ascending: true, nullsFirst: false })
     .limit(1)
     .single();
