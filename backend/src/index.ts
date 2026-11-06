@@ -40,6 +40,8 @@ app.use(cors());
 app.use(express.json());
 app.use(httpLogger);
 
+const getToken = (req: Request): string | undefined => (req as Request & { token?: string }).token;
+
 const userTimers = new Map<string, PomodoroTimer>();
 
 export function getTimerForUser(profileId: string): PomodoroTimer {
@@ -84,7 +86,7 @@ app.post('/api/timer/complete', async (req: Request, res: Response) => {
     let recordedSession = null;
     if (completedSession && profileId !== 'default') {
       try {
-        recordedSession = await recordSession(profileId, completedSession);
+        recordedSession = await recordSession(profileId, completedSession, getToken(req));
       } catch (dbErr) {
         logger.error({ err: dbErr }, 'Failed to record completed session in database');
       }
@@ -106,7 +108,7 @@ app.post('/api/timer/reset', async (req: Request, res: Response) => {
     let recordedSession = null;
     if (interruptedSession && profileId !== 'default') {
       try {
-        recordedSession = await recordSession(profileId, interruptedSession);
+        recordedSession = await recordSession(profileId, interruptedSession, getToken(req));
       } catch (dbErr) {
         logger.error({ err: dbErr }, 'Failed to record interrupted session in database');
       }
@@ -129,7 +131,7 @@ app.get('/api/timer/insights', async (req: Request, res: Response) => {
   try {
     const profileId = req.user!.id;
     const days = req.query['days'] ? parseInt(String(req.query['days']), 10) : 7;
-    const insights = await getTimerInsights(profileId, isNaN(days) ? 7 : days);
+    const insights = await getTimerInsights(profileId, isNaN(days) ? 7 : days, new Date(), getToken(req));
     res.json(insights);
   } catch (err: unknown) {
     logger.error({ err }, 'Error generating timer insights');
@@ -149,7 +151,7 @@ app.post('/api/timer/insights/apply', async (req: Request, res: Response) => {
       return;
     }
 
-    const result = await applyRecommendation(profileId, { target: applyTarget, value: applyValue });
+    const result = await applyRecommendation(profileId, { target: applyTarget, value: applyValue }, getToken(req));
     res.json({ message: 'Recommendation applied successfully.', ...result });
   } catch (err: unknown) {
     logger.error({ err }, 'Error applying insight recommendation');
@@ -160,7 +162,7 @@ app.post('/api/timer/insights/apply', async (req: Request, res: Response) => {
 app.post('/api/timer/sessions', async (req: Request, res: Response) => {
   try {
     const profileId = req.user!.id;
-    const session = await recordSession(profileId, req.body ?? {});
+    const session = await recordSession(profileId, req.body ?? {}, getToken(req));
     res.status(201).json(session);
   } catch (err: unknown) {
     logger.error({ err }, 'Error recording pomodoro session');
@@ -172,7 +174,7 @@ app.get('/api/timer/sessions', async (req: Request, res: Response) => {
   try {
     const profileId = req.user!.id;
     const limit = req.query['limit'] ? parseInt(String(req.query['limit']), 10) : 100;
-    const sessions = await getUserSessions(profileId, isNaN(limit) ? 100 : limit);
+    const sessions = await getUserSessions(profileId, isNaN(limit) ? 100 : limit, getToken(req));
     res.json(sessions);
   } catch (err: unknown) {
     logger.error({ err }, 'Error retrieving pomodoro sessions');
@@ -183,7 +185,7 @@ app.get('/api/timer/sessions', async (req: Request, res: Response) => {
 app.get('/api/timer/preferences', async (req: Request, res: Response) => {
   try {
     const profileId = req.user!.id;
-    const preferences = await getUserPreferences(profileId);
+    const preferences = await getUserPreferences(profileId, getToken(req));
     res.json(preferences);
   } catch (err: unknown) {
     logger.error({ err }, 'Error retrieving timer preferences');
@@ -208,7 +210,7 @@ app.put('/api/timer/preferences', async (req: Request, res: Response) => {
           'pomodoro_cycles',
         ].includes(key)
       ) {
-        const updateRes = await applyRecommendation(profileId, { target: key, value: Number(val) });
+        const updateRes = await applyRecommendation(profileId, { target: key, value: Number(val) }, getToken(req));
         Object.assign(results, updateRes.updatedSettings);
       }
     }
@@ -226,9 +228,11 @@ app.put('/api/timer/preferences', async (req: Request, res: Response) => {
 app.use('/api/calendars', featureFlag('ENABLE_CALENDAR'));
 app.use('/api/calendars', verifyToken);
 
-app.get('/api/calendars', async (_req: Request, res: Response) => {
+app.get('/api/calendars', async (req: Request, res: Response) => {
   try {
-    const calendars = await listCalendars();
+    const profileId = req.user?.id;
+    const token = getToken(req);
+    const calendars = await (token ? listCalendars(profileId, token) : listCalendars());
     res.json(calendars);
   } catch (err: unknown) {
     logger.error({ err }, 'Error retrieving calendars');
@@ -243,8 +247,21 @@ app.post('/api/calendars', async (req: Request, res: Response) => {
     return;
   }
   try {
-    const calendar = await addCalendar(url, name, description);
-    res.status(201).json(calendar);
+    const profileId = req.user?.id;
+    const token = getToken(req);
+    const calendar = await (token
+      ? addCalendar(url, name, description, profileId, token)
+      : addCalendar(url, name, description));
+    // Auto-sync calendar so tasks are immediately generated upon calendar import
+    let syncedTasksCount = 0;
+    try {
+      syncedTasksCount = await (token
+        ? syncCalendarById(calendar.id, profileId, token)
+        : syncCalendarById(calendar.id as string));
+    } catch (syncErr) {
+      logger.warn({ err: syncErr }, 'Initial calendar auto-sync skipped/failed');
+    }
+    res.status(201).json({ ...calendar, syncedTasksCount });
   } catch (err: unknown) {
     logger.error({ err }, 'Error adding calendar');
     res.status(500).json({ error: err instanceof Error ? err.message : String(err) });
@@ -253,7 +270,11 @@ app.post('/api/calendars', async (req: Request, res: Response) => {
 
 app.delete('/api/calendars/:id', async (req: Request, res: Response) => {
   try {
-    await deleteCalendar(req.params['id'] as string);
+    const profileId = req.user?.id;
+    const token = getToken(req);
+    await (token
+      ? deleteCalendar(req.params['id'] as string, profileId, token)
+      : deleteCalendar(req.params['id'] as string));
     res.status(204).send();
   } catch (err: unknown) {
     logger.error({ err }, 'Error deleting calendar');
@@ -263,7 +284,11 @@ app.delete('/api/calendars/:id', async (req: Request, res: Response) => {
 
 app.post('/api/calendars/:id/sync', async (req: Request, res: Response) => {
   try {
-    const count = await syncCalendarById(req.params['id'] as string);
+    const profileId = req.user?.id;
+    const token = getToken(req);
+    const count = await (token
+      ? syncCalendarById(req.params['id'] as string, profileId, token)
+      : syncCalendarById(req.params['id'] as string));
     res.json({ message: `Synced ${count} task(s).`, count });
   } catch (err: unknown) {
     logger.error({ err }, 'Error syncing calendar');
@@ -279,7 +304,8 @@ app.use('/api/tasks', verifyToken);
 app.get('/api/tasks', async (req: Request, res: Response) => {
   try {
     const profileId = req.user!.id;
-    const tasks = await getAllTasks(profileId);
+    const token = getToken(req);
+    const tasks = await (token ? getAllTasks(profileId, token) : getAllTasks(profileId));
     res.json(tasks);
   } catch (err: unknown) {
     logger.error({ err }, 'Error retrieving tasks');
@@ -290,7 +316,8 @@ app.get('/api/tasks', async (req: Request, res: Response) => {
 app.get('/api/tasks/next', async (req: Request, res: Response) => {
   try {
     const profileId = req.user?.id;
-    const task = await getNextTask(profileId);
+    const token = getToken(req);
+    const task = await (token ? getNextTask(profileId, token) : getNextTask(profileId));
 
     if (!task) {
       res.status(404).json({ error: 'No upcoming tasks found.' });
@@ -317,7 +344,8 @@ app.post('/api/tasks', async (req: Request, res: Response) => {
       ...req.body,
       profile_id: req.body?.profile_id ?? profileId,
     };
-    const task = await createTask(taskData);
+    const token = getToken(req);
+    const task = await (token ? createTask(taskData, token) : createTask(taskData));
     res.status(201).json(task);
   } catch (err: unknown) {
     res.status(500).json({ error: err instanceof Error ? err.message : String(err) });
@@ -332,7 +360,8 @@ app.put('/api/tasks/:id', async (req: Request, res: Response) => {
       return;
     }
 
-    const task = await updateTask(taskId, req.body ?? {});
+    const token = getToken(req);
+    const task = await (token ? updateTask(taskId, req.body ?? {}, token) : updateTask(taskId, req.body ?? {}));
     if (!task) {
       res.status(404).json({ error: 'Task not found' });
       return;
@@ -352,7 +381,12 @@ app.delete('/api/tasks/:id', async (req: Request, res: Response) => {
       res.status(400).json({ error: 'Invalid task ID' });
       return;
     }
-    await softDeleteTask(taskId);
+    const token = getToken(req);
+    if (token) {
+      await softDeleteTask(taskId, token);
+    } else {
+      await softDeleteTask(taskId);
+    }
     res.status(204).send();
   } catch (err: unknown) {
     logger.error({ err }, 'Error deleting task');

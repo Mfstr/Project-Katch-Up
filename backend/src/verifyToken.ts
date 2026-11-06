@@ -2,12 +2,13 @@ import type { Request, Response, NextFunction } from 'express';
 import { supabase } from './supabaseClient.js';
 import type { User } from '@supabase/supabase-js';
 
-// Extend Express Request interface to include the user
+// Extend Express Request interface to include the user and token
 declare global {
   // eslint-disable-next-line @typescript-eslint/no-namespace
   namespace Express {
     interface Request {
       user?: User;
+      token?: string;
     }
   }
 }
@@ -45,6 +46,7 @@ export const verifyToken = async (req: Request, res: Response, next: NextFunctio
     }
 
     req.user = data.user;
+    req.token = token;
     next();
   } catch {
     res.status(500).json({ error: 'Internal server error during authentication' });
