@@ -16,6 +16,7 @@ import {
   getUserPreferences,
 } from './insightsService.js';
 import { verifyToken } from './verifyToken.js';
+import { featureFlag } from './featureFlag.js';
 import { logger, httpLogger } from './logger.js';
 import { checkReadiness } from './healthService.js'; // eslint-disable-line @typescript-eslint/no-unused-vars
 
@@ -222,6 +223,7 @@ app.put('/api/timer/preferences', async (req: Request, res: Response) => {
 // ---------------------------------------------------------------------------
 // Calendar Management Routes
 // ---------------------------------------------------------------------------
+app.use('/api/calendars', featureFlag('ENABLE_CALENDAR'));
 app.use('/api/calendars', verifyToken);
 
 app.get('/api/calendars', async (_req: Request, res: Response) => {
@@ -424,11 +426,12 @@ app.use((err: unknown, _req: Request, res: Response, _next: NextFunction) => {
   }
 
   const message = err instanceof Error ? err.message : String(err);
-  
+
   // Extract custom status codes (e.g., 400, 404, 401) or default to 500
-  const rawStatus = typeof err === 'object' && err !== null && 'status' in err
-    ? Number((err as Record<string, unknown>).status)
-    : 500;
+  const rawStatus =
+    typeof err === 'object' && err !== null && 'status' in err
+      ? Number((err as Record<string, unknown>).status)
+      : 500;
 
   const statusCode = !isNaN(rawStatus) && rawStatus >= 400 && rawStatus < 600 ? rawStatus : 500;
 
