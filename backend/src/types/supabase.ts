@@ -38,10 +38,17 @@ export type Database = {
           session_type: string;
           started_at: string;
           task_id: number | null;
+          planned_duration_seconds?: number | null;
+          planned_duraton_seconds?: number | null;
+          actual_duration_seconds?: number | null;
+          completed_at?: string | null;
+          is_interrupted?: boolean | null;
+          was_interrupted?: boolean | null;
+          tasks_completed?: number | null;
         };
         Insert: {
           created_at?: string;
-          duration_minutes: number;
+          duration_minutes?: number;
           ended_at?: string | null;
           id?: never;
           is_completed?: boolean;
@@ -49,6 +56,13 @@ export type Database = {
           session_type?: string;
           started_at?: string;
           task_id?: number | null;
+          planned_duration_seconds?: number | null;
+          planned_duraton_seconds?: number | null;
+          actual_duration_seconds?: number | null;
+          completed_at?: string | null;
+          is_interrupted?: boolean | null;
+          was_interrupted?: boolean | null;
+          tasks_completed?: number | null;
         };
         Update: {
           created_at?: string;
@@ -60,6 +74,13 @@ export type Database = {
           session_type?: string;
           started_at?: string;
           task_id?: number | null;
+          planned_duration_seconds?: number | null;
+          planned_duraton_seconds?: number | null;
+          actual_duration_seconds?: number | null;
+          completed_at?: string | null;
+          is_interrupted?: boolean | null;
+          was_interrupted?: boolean | null;
+          tasks_completed?: number | null;
         };
         Relationships: [
           {

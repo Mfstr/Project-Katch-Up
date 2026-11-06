@@ -18,8 +18,10 @@ export default function PomodoroTimer({
     remainingSeconds = 20 * 60,
     isActive = false,
     isLoading = false,
+    canResume = false,
+    sessionCompleted = false,
     error = '',
-    onStart,
+    onResume,
     onPause,
     onStop,
     onReset,
@@ -42,6 +44,12 @@ export default function PomodoroTimer({
                 <p className="timer-task">Select a task to begin.</p>
             )}
 
+            {sessionCompleted && (
+                <p className="timer-completion-message" role="status">
+                    Time's up!
+                </p>
+            )}
+
             {error && (
                 <div className="timer-error" role="alert">
                     {error}
@@ -53,8 +61,9 @@ export default function PomodoroTimer({
                     <button
                         type="button"
                         className="timer-start"
-                        onClick={onStart}
-                        disabled={isLoading || !task}
+                        onClick={onResume}
+                        disabled={isLoading || !canResume}
+                        title={canResume ? 'Resume paused timer' : 'Start a session first'}
                     >
                         Play
                     </button>

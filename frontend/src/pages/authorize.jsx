@@ -35,7 +35,10 @@ export default function Authorize() {
             const token = body.session?.access_token;
             if (token) {
                 localStorage.setItem('authToken', token);
-                navigate('/');
+                navigate('/dashboard');
+            } else if (isRegister && (body.user || body.id)) {
+                setError('Registration successful! Please check your email to confirm your account (or ensure email confirmation is disabled in Supabase), then log in.');
+                navigate('/login');
             } else {
                 throw new Error('No access token returned from server.');
             }
@@ -63,7 +66,7 @@ export default function Authorize() {
                     name="email"
                     type="email"
                     autoComplete="email"
-                    defaultValue="alex@example.com"
+                    defaultValue="alex@gmail.com"
                     required
                 />
 

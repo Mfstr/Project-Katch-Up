@@ -1,0 +1,86 @@
+import { test, expect } from '@playwright/test';
+
+test.describe('Authentication Journey E2E Suite', () => {
+  const testEmail = 'e2e-tester@example.com';
+  const testPassword = 'testPassword';
+
+  test.beforeEach(async ({ page }) => {
+    // Navigate using relative path, relying on baseURL in playwright.config.js
+    await page.goto('/login');
+    await page.waitForLoadState('domcontentloaded');
+  });
+
+  test('should successfully log in, verify dashboard header, and log out', async ({ page }) => {
+    const emailInput = page.locator('#email');
+    const passwordInput = page.locator('#password');
+
+    await expect(emailInput).toBeVisible({ timeout: 15000 });
+    await emailInput.fill(testEmail);
+    await passwordInput.fill(testPassword);
+
+    const submitBtn = page.locator('button[type="submit"]');
+    
+    // Click submit and wait directly for the dashboard URL navigation
+    await Promise.all([
+      page.waitForURL(/\/dashboard$/, { timeout: 15000 }),
+      submitBtn.click(),
+    ]);
+
+    // Verify Supabase session token is stored in localStorage
+    const authToken = await page.evaluate(() => {
+      const keys = Object.keys(localStorage);
+      const supabaseKey = keys.find(k => k.includes('supabase.auth.token'));
+      return supabaseKey ? localStorage.getItem(supabaseKey) : localStorage.getItem('authToken');
+    });
+    expect(authToken).toBeTruthy();
+
+    // Verify dashboard heading is visible
+    const dashboardHeading = page.locator('#dashboard-heading');
+    await expect(dashboardHeading).toHaveText('Your Tasks');
+
+    // Handle the logout confirmation dialog popup
+    page.once('dialog', async dialog => {
+      await dialog.accept();
+    });
+
+    // Click the logout button
+    const logoutBtn = page.locator('button.logout-button');
+    await expect(logoutBtn).toBeVisible();
+    await logoutBtn.click();
+
+    // Verify redirection back to login view after logout
+    await page.waitForURL(/\/(login)?$/, { timeout: 10000 });
+  });
+
+  test('should display error when logging in with incorrect password', async ({ page }) => {
+    const emailInput = page.locator('#email');
+    const passwordInput = page.locator('#password');
+
+    await expect(emailInput).toBeVisible({ timeout: 15000 });
+    await emailInput.fill(testEmail);
+    await passwordInput.fill('wrongPassword123');
+
+    const submitBtn = page.locator('button[type="submit"]');
+    
+    const [loginRes] = await Promise.all([
+      page.waitForResponse(res => res.url().includes('/api/auth/login') && res.status() >= 400),
+      submitBtn.click(),
+    ]);
+
+    expect(loginRes.status()).toBeGreaterThanOrEqual(400);
+
+    const errorAlert = page.locator('[role="alert"]');
+    await expect(errorAlert).toBeVisible({ timeout: 5000 });
+  });
+
+  test('should successfully navigate and render the registration view', async ({ page }) => {
+    await page.goto('/register');
+    await page.waitForLoadState('domcontentloaded');
+
+    const emailInput = page.locator('#email');
+    const submitBtn = page.locator('button[type="submit"]');
+
+    await expect(emailInput).toBeVisible({ timeout: 15000 });
+    await expect(submitBtn).toHaveText('Create Account');
+  });
+});
