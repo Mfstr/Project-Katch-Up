@@ -131,11 +131,11 @@ describe('E2E API Integration & Contract Tests', () => {
     expect(response.body.error).toBe('email and password are required.');
   });
 
-    it('DELETE /api/tasks/:id rejects invalid non-numeric IDs', async () => {
-        const response = await request(app).delete('/api/tasks/abc');
-        expect(response.status).toBe(400);
-        expect(response.body.error).toBe('Invalid task ID');
-    });
+  it('DELETE /api/tasks/:id rejects invalid non-numeric IDs', async () => {
+    const response = await request(app).delete('/api/tasks/abc');
+    expect(response.status).toBe(400);
+    expect(response.body.error).toBe('Invalid task ID');
+  });
 });
 
 // Write additional tests centralized error handling added to index.ts
@@ -160,9 +160,7 @@ describe('API Error Handling & Edge Cases', () => {
   });
 
   it('should return 401/400 on malformed auth login requests', async () => {
-    const res = await request(app)
-      .post('/api/auth/login')
-      .send({ email: 'test@example.com' }); // Missing password
+    const res = await request(app).post('/api/auth/login').send({ email: 'test@example.com' }); // Missing password
 
     expect(res.status).toBe(400);
     expect(res.body.error).toBe('email and password are required.');
@@ -239,6 +237,8 @@ describe('Server Error Catch Blocks & Global Error Handler', () => {
     expect(res.body).toHaveProperty('error');
   });
 });
+
+describe('Task Management Routes', () => {
   it('GET /api/tasks returns list of tasks for authenticated user', async () => {
     const mockTasks = [{ id: 1, title: 'Test Task', dueDate: '2026-10-20', isComplete: false }];
     getAllTasks.mockResolvedValueOnce(mockTasks);
@@ -365,6 +365,37 @@ describe('Server Error Catch Blocks & Global Error Handler', () => {
     expect(response.status).toBe(400);
     expect(response.body.error).toBe('Invalid task ID');
   });
+});
+
+describe('Feature Flag Integration on Routes', () => {
+  const originalEnv = process.env.ENABLE_CALENDAR;
+
+  afterEach(() => {
+    if (originalEnv !== undefined) {
+      process.env.ENABLE_CALENDAR = originalEnv;
+    } else {
+      delete process.env.ENABLE_CALENDAR;
+    }
+  });
+
+  it('returns 503 Service Unavailable on /api/calendars when ENABLE_CALENDAR is false', async () => {
+    process.env.ENABLE_CALENDAR = 'false';
+
+    const response = await request(app).get('/api/calendars');
+    expect(response.status).toBe(503);
+    expect(response.body).toEqual({
+      error: 'Service Unavailable',
+      message: "Feature 'ENABLE_CALENDAR' is disabled.",
+    });
+  });
+
+  it('allows /api/calendars when ENABLE_CALENDAR is true', async () => {
+    process.env.ENABLE_CALENDAR = 'true';
+
+    const response = await request(app).get('/api/calendars');
+    expect(response.status).toBe(200);
+  });
+});
 
   describe('Auth Routes - Logout', () => {
     it('POST /api/auth/logout logs out user successfully', async () => {
