@@ -10,7 +10,7 @@ test.describe('Authentication Journey E2E Suite', () => {
     await page.waitForLoadState('domcontentloaded');
   });
 
-  test('should successfully log in with valid credentials and redirect to dashboard', async ({ page }) => {
+  test('should successfully log in, verify dashboard header, and log out', async ({ page }) => {
     const emailInput = page.locator('#email');
     const passwordInput = page.locator('#password');
 
@@ -30,6 +30,23 @@ test.describe('Authentication Journey E2E Suite', () => {
     
     const authToken = await page.evaluate(() => localStorage.getItem('authToken'));
     expect(authToken).toBeTruthy();
+
+    // Verify dashboard heading is visible
+    const dashboardHeading = page.locator('#dashboard-heading');
+    await expect(dashboardHeading).toHaveText('Your Tasks');
+
+    // Handle the logout confirmation dialog popup
+    page.once('dialog', async dialog => {
+      await dialog.accept();
+    });
+
+    // Click the logout button
+    const logoutBtn = page.locator('button.logout-button');
+    await expect(logoutBtn).toBeVisible();
+    await logoutBtn.click();
+
+    // Verify redirection back to login view after logout
+    await page.waitForURL(/\/(login)?$/, { timeout: 10000 });
   });
 
   test('should display error when logging in with incorrect password', async ({ page }) => {
