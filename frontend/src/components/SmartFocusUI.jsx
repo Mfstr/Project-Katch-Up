@@ -2,14 +2,18 @@ import { useCallback, useEffect, useRef, useState } from 'react';
 import { useNavigate } from 'react-router-dom'
 
 import {
+    addCalendar,
     createTask,
+    deleteCalendar,
     deleteTask,
+    getCalendars,
     getTimerStatus,
     logout,
     pauseTimer,
     resetTimer,
     startTimer,
     stopTimer,
+    syncCalendar,
     updateTask,
 } from '../services/apiClient.js';
 
@@ -22,6 +26,7 @@ import InsightAlert from './InsightAlert.jsx';
 const DEFAULT_FOCUS_SECONDS = 20 * 60;
 const SHORT_BREAK_SECONDS = 5 * 60;
 const EMPTY_TASK_FORM = { title: '', description: '', dueDate: '' };
+const EMPTY_CALENDAR_FORM = { name: '', url: '', description: '' };
 
 function readSavedTask() {
     try {
@@ -85,12 +90,23 @@ export default function SmartFocusUI() {
     const [taskNotice, setTaskNotice] = useState('');
     const [taskActionError, setTaskActionError] = useState('');
     const [taskActionNotice, setTaskActionNotice] = useState('');
+    const [calendars, setCalendars] = useState([]);
+    const [isLoadingCalendars, setLoadingCalendars] = useState(false);
+    const [isCalendarManagerOpen, setCalendarManagerOpen] = useState(false);
+    const [calendarForm, setCalendarForm] = useState(EMPTY_CALENDAR_FORM);
+    const [isAddingCalendar, setAddingCalendar] = useState(false);
+    const [deletingCalendarId, setDeletingCalendarId] = useState(null);
+    const [syncingCalendarId, setSyncingCalendarId] = useState(null);
+    const [calendarError, setCalendarError] = useState('');
+    const [calendarNotice, setCalendarNotice] = useState('');
     const clearMessageNotice = useCallback(() => setMessage(''), []);
     const clearTaskNotice = useCallback(() => setTaskNotice(''), []);
     const clearTaskActionNotice = useCallback(() => setTaskActionNotice(''), []);
+    const clearCalendarNotice = useCallback(() => setCalendarNotice(''), []);
     const isMessageFading = useAutoDismissNotice(message, clearMessageNotice);
     const isTaskNoticeFading = useAutoDismissNotice(taskNotice, clearTaskNotice);
     const isTaskActionNoticeFading = useAutoDismissNotice(taskActionNotice, clearTaskActionNotice);
+    const isCalendarNoticeFading = useAutoDismissNotice(calendarNotice, clearCalendarNotice);
     const chimeRef = useRef(null);
     const completionHandledRef = useRef(false);
     const notificationPermRequestRef = useRef(false);
@@ -437,6 +453,118 @@ export default function SmartFocusUI() {
         }
     };
 
+    const loadCalendars = useCallback(async () => {
+        setLoadingCalendars(true);
+        try {
+            const list = await getCalendars();
+            setCalendars(Array.isArray(list) ? list : []);
+        } catch {
+            // Silently maintain existing state
+        } finally {
+            setLoadingCalendars(false);
+        }
+    }, []);
+
+    useEffect(() => {
+        loadCalendars();
+    }, [loadCalendars]);
+
+    const handleCalendarManagerToggle = () => {
+        setCalendarManagerOpen((isOpen) => !isOpen);
+        setCalendarNotice('');
+        setCalendarError('');
+    };
+
+    const handleCalendarManagerClose = () => setCalendarManagerOpen(false);
+
+    const handleCalendarFormChange = (field, value) => {
+        setCalendarForm((currentForm) => ({ ...currentForm, [field]: value }));
+        if (calendarError) setCalendarError('');
+    };
+
+    const handleAddCalendar = async (event) => {
+        event.preventDefault();
+        const name = calendarForm.name.trim();
+        const url = calendarForm.url.trim();
+
+        if (!name || !url) {
+            setCalendarError('Calendar name and feed URL are required.');
+            return;
+        }
+
+        setAddingCalendar(true);
+        setCalendarError('');
+        setCalendarNotice('');
+
+        try {
+            const res = await addCalendar({
+                name,
+                url,
+                description: calendarForm.description.trim() || null,
+            });
+
+            setCalendarForm(EMPTY_CALENDAR_FORM);
+            const count = res?.syncedTasksCount ?? 0;
+            setCalendarNotice(
+                count > 0
+                    ? `Added "${name}" and synced ${count} upcoming event(s) as tasks!`
+                    : `Added "${name}" calendar feed.`,
+            );
+            await loadCalendars();
+            setTaskRefreshSignal((currentSignal) => currentSignal + 1);
+        } catch (requestError) {
+            setCalendarError(
+                requestError instanceof Error
+                    ? requestError.message
+                    : 'Unable to add calendar.',
+            );
+        } finally {
+            setAddingCalendar(false);
+        }
+    };
+
+    const handleDeleteCalendar = async (calId) => {
+        if (!window.confirm('Are you sure you want to remove this calendar feed?')) return;
+        setDeletingCalendarId(calId);
+        setCalendarError('');
+        setCalendarNotice('');
+
+        try {
+            await deleteCalendar(calId);
+            setCalendarNotice('Calendar removed successfully.');
+            setCalendars((prev) => prev.filter((c) => c.id !== calId));
+        } catch (requestError) {
+            setCalendarError(
+                requestError instanceof Error
+                    ? requestError.message
+                    : 'Unable to remove calendar.',
+            );
+        } finally {
+            setDeletingCalendarId(null);
+        }
+    };
+
+    const handleSyncCalendar = async (calId) => {
+        setSyncingCalendarId(calId);
+        setCalendarError('');
+        setCalendarNotice('');
+
+        try {
+            const res = await syncCalendar(calId);
+            const count = res?.count ?? 0;
+            setCalendarNotice(`Sync complete: ${count} task(s) updated.`);
+            setTaskRefreshSignal((currentSignal) => currentSignal + 1);
+        } catch (requestError) {
+            setCalendarError(
+                requestError instanceof Error
+                    ? requestError.message
+                    : 'Failed to sync calendar feed.',
+            );
+        } finally {
+            setSyncingCalendarId(null);
+        }
+    };
+
     const handleDeleteTask = async (tasktoDelete) => {
         const taskId = tasktoDelete?.id ?? tasktoDelete?.taskId;
         const taskTitle = tasktoDelete?.title ?? tasktoDelete?.name ?? 'Untitled task';
@@ -591,6 +719,8 @@ export default function SmartFocusUI() {
                     taskActionNoticeFading={isTaskActionNoticeFading}
                     isYoutubePlayerEnabled={isYoutubePlayerEnabled}
                     onLogout={handleLogout}
+                    calendars={calendars}
+                    onOpenCalendarManager={() => setCalendarManagerOpen(true)}
                 />
 
                 <SettingsPanel 
@@ -608,6 +738,22 @@ export default function SmartFocusUI() {
                     onTaskManagerClose={handleTaskManagerClose}
                     onTaskFormChange={handleTaskFormChange}
                     onCreateTask={handleCreateTask}
+                    isCalendarManagerOpen={isCalendarManagerOpen}
+                    onCalendarManagerToggle={handleCalendarManagerToggle}
+                    onCalendarManagerClose={handleCalendarManagerClose}
+                    calendars={calendars}
+                    isLoadingCalendars={isLoadingCalendars}
+                    calendarForm={calendarForm}
+                    onCalendarFormChange={handleCalendarFormChange}
+                    onAddCalendar={handleAddCalendar}
+                    isAddingCalendar={isAddingCalendar}
+                    onDeleteCalendar={handleDeleteCalendar}
+                    deletingCalendarId={deletingCalendarId}
+                    onSyncCalendar={handleSyncCalendar}
+                    syncingCalendarId={syncingCalendarId}
+                    calendarError={calendarError}
+                    calendarNotice={calendarNotice}
+                    calendarNoticeFading={isCalendarNoticeFading}
                 />
             
                 <div className="smart-focus-session-button">

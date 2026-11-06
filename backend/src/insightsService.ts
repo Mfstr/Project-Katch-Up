@@ -1,5 +1,12 @@
 import { supabase } from './supabaseClient.js';
 
+const getDbClient = (token?: string) => {
+  if (token && typeof (supabase as unknown as { createAuthClient?: (t?: string) => typeof supabase }).createAuthClient === 'function') {
+    return (supabase as unknown as { createAuthClient: (t?: string) => typeof supabase }).createAuthClient(token);
+  }
+  return supabase;
+};
+
 export type SessionType = 'focus' | 'short_break' | 'long_break';
 
 export interface NormalizedSession {
@@ -572,8 +579,10 @@ export function analyzeSessionPatterns(
 export async function getUserSessions(
   profileId: string,
   limit: number = 100,
+  token?: string,
 ): Promise<NormalizedSession[]> {
-  const { data, error } = await supabase
+  const db = getDbClient(token);
+  const { data, error } = await db
     .from('pomodoro_sessions')
     .select('*')
     .eq('profile_id', profileId)
@@ -595,10 +604,12 @@ export async function getUserSessions(
  * Service function: Retrieves user profile preferences.
  *
  * @param profileId - The UUID or identifier of the user profile.
+ * @param token - Optional JWT authentication token.
  * @returns UserPreferences object with focus interval, break interval, and pomodoro cycle settings.
  */
-export async function getUserPreferences(profileId: string): Promise<UserPreferences> {
-  const { data, error } = await supabase
+export async function getUserPreferences(profileId: string, token?: string): Promise<UserPreferences> {
+  const db = getDbClient(token);
+  const { data, error } = await db
     .from('profiles')
     .select('focus_interval, break_interval, pomodoro_cycles')
     .eq('id', profileId)
@@ -624,13 +635,16 @@ export async function getUserPreferences(profileId: string): Promise<UserPrefere
  *
  * @param profileId - The UUID or identifier of the user profile.
  * @param action - The setting target ('break_interval', 'focus_interval', or 'pomodoro_cycles') and its new integer value.
+ * @param token - Optional JWT authentication token.
  * @returns Object indicating success and containing the dictionary of updated settings.
  * @throws {Error} If the target is invalid, the value is out of bounds, or updating Supabase fails.
  */
 export async function applyRecommendation(
   profileId: string,
   action: { target: string; value: number },
+  token?: string,
 ): Promise<{ success: boolean; updatedSettings: Partial<UserPreferences> }> {
+  const db = getDbClient(token);
   const validTargets: Record<string, string> = {
     break_interval: 'break_interval',
     breakInterval: 'break_interval',
@@ -650,7 +664,7 @@ export async function applyRecommendation(
     throw new Error(`Value must be an integer between 1 and 180.`);
   }
 
-  const { error } = await supabase
+  const { error } = await db
     .from('profiles')
     .upsert({ id: profileId, [dbField]: numericValue }, { onConflict: 'id' });
 
@@ -677,13 +691,16 @@ export async function applyRecommendation(
  *
  * @param profileId - The UUID or identifier of the user profile.
  * @param input - Attributes of the completed or interrupted session.
+ * @param token - Optional JWT authentication token.
  * @returns The normalized session record persisted in the database.
  * @throws {Error} If inserting the session into Supabase fails.
  */
 export async function recordSession(
   profileId: string,
   input: CreateSessionInput,
+  token?: string,
 ): Promise<NormalizedSession> {
+  const db = getDbClient(token);
   const plannedSeconds = input.plannedDurationSeconds ?? 25 * 60;
   const actualSeconds = input.actualDurationSeconds ?? plannedSeconds;
   const isInterrupted = input.isInterrupted ?? false;
@@ -708,7 +725,7 @@ export async function recordSession(
     sessionPayload['task_id'] = input.taskId;
   }
 
-  let { data, error } = await supabase
+  let { data, error } = await db
     .from('pomodoro_sessions')
     .insert(sessionPayload)
     .select()
@@ -718,7 +735,7 @@ export async function recordSession(
   if (error && error.message && error.message.includes('column') && error.message.includes('does not exist')) {
     if (sessionPayload['task_id'] !== undefined && error.message.includes('task_id')) {
       delete sessionPayload['task_id'];
-      const retryResult = await supabase
+      const retryResult = await db
         .from('pomodoro_sessions')
         .insert(sessionPayload)
         .select()
@@ -735,7 +752,7 @@ export async function recordSession(
         ended_at: completedAt,
         task_id: input.taskId ?? null,
       };
-      const retryResult = await supabase
+      const retryResult = await db
         .from('pomodoro_sessions')
         .insert(legacyPayload)
         .select()
@@ -758,16 +775,18 @@ export async function recordSession(
  * @param profileId - The UUID or identifier of the user profile.
  * @param daysCount - Number of trailing days to analyze (default: 7).
  * @param referenceDate - Reference boundary date for calculating insights (default: now).
+ * @param token - Optional JWT authentication token.
  * @returns Comprehensive TimerInsights containing recommendations, focus statistics, streak counters, and preferences.
  */
 export async function getTimerInsights(
   profileId: string,
   daysCount: number = 7,
   referenceDate: Date = new Date(),
+  token?: string,
 ): Promise<TimerInsights> {
   const [sessions, preferences] = await Promise.all([
-    getUserSessions(profileId),
-    getUserPreferences(profileId),
+    getUserSessions(profileId, 100, token),
+    getUserPreferences(profileId, token),
   ]);
 
   const recommendations = analyzeSessionPatterns(sessions, preferences, referenceDate);

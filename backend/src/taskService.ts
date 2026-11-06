@@ -1,6 +1,13 @@
 import { supabase } from './supabaseClient.js';
 import type { Database } from './types/supabase.js';
 
+const getDbClient = (token?: string) => {
+  if (token && typeof (supabase as unknown as { createAuthClient?: (t?: string) => typeof supabase }).createAuthClient === 'function') {
+    return (supabase as unknown as { createAuthClient: (t?: string) => typeof supabase }).createAuthClient(token);
+  }
+  return supabase;
+};
+
 type TaskInsert = Database['public']['Tables']['tasks']['Insert'];
 
 export interface CreateTaskInput {
@@ -43,10 +50,15 @@ export interface TaskResponse {
  * Inserts a new task for an authenticated user, falling back to provision the user profile if necessary.
  *
  * @param task - Task attributes including title, optional description, due date, completion status, and profile ID.
+ * @param token - Optional JWT authentication token.
  * @returns The newly created and normalized task response record.
  * @throws {Error} If task creation fails in Supabase.
  */
-export const createTask = async (task: CreateTaskInput | TaskInsert): Promise<TaskResponse> => {
+export const createTask = async (
+  task: CreateTaskInput | TaskInsert,
+  token?: string,
+): Promise<TaskResponse> => {
+  const db = getDbClient(token);
   const insertPayload: TaskInsert = {
     title: task.title ?? null,
     description: task.description ?? null,
@@ -70,7 +82,7 @@ export const createTask = async (task: CreateTaskInput | TaskInsert): Promise<Ta
           : null,
   };
 
-  const { data, error } = await supabase.from('tasks').insert(insertPayload).select().single();
+  const { data, error } = await db.from('tasks').insert(insertPayload).select().single();
 
   if (error) {
     if (
@@ -79,8 +91,8 @@ export const createTask = async (task: CreateTaskInput | TaskInsert): Promise<Ta
       insertPayload.profile_id
     ) {
       try {
-        await supabase.from('profiles').upsert({ id: insertPayload.profile_id }, { onConflict: 'id' });
-        const retry = await supabase.from('tasks').insert(insertPayload).select().single();
+        await db.from('profiles').upsert({ id: insertPayload.profile_id }, { onConflict: 'id' });
+        const retry = await db.from('tasks').insert(insertPayload).select().single();
         if (!retry.error && retry.data) {
           return {
             ...retry.data,
@@ -107,13 +119,16 @@ export const createTask = async (task: CreateTaskInput | TaskInsert): Promise<Ta
  *
  * @param id - Numeric ID of the task to update.
  * @param updates - Partial task properties to update (e.g. title, description, dueDate, isComplete).
+ * @param token - Optional JWT authentication token.
  * @returns The updated task response record, or null if the task was not found.
  * @throws {Error} If the database update fails.
  */
 export const updateTask = async (
   id: number,
   updates: UpdateTaskInput,
+  token?: string,
 ): Promise<TaskResponse | null> => {
+  const db = getDbClient(token);
   const updatePayload: Record<string, unknown> = {};
 
   if (updates.title !== undefined) updatePayload.title = updates.title;
@@ -135,7 +150,7 @@ export const updateTask = async (
     updatePayload.profile_id = updates.profileId;
   }
 
-  const { data, error } = await supabase
+  const { data, error } = await db
     .from('tasks')
     .update(updatePayload)
     .eq('id', id)
@@ -160,11 +175,13 @@ export const updateTask = async (
  * Soft deletes a task by setting its deleted_at timestamp to the current ISO date.
  *
  * @param id - Numeric ID of the task to soft delete.
+ * @param token - Optional JWT authentication token.
  * @returns Resolves when the task is marked deleted.
  * @throws {Error} If the soft delete update fails in Supabase.
  */
-export const softDeleteTask = async (id: number): Promise<void> => {
-  const { error } = await supabase
+export const softDeleteTask = async (id: number, token?: string): Promise<void> => {
+  const db = getDbClient(token);
+  const { error } = await db
     .from('tasks')
     .update({ deleted_at: new Date().toISOString() })
     .eq('id', id);
@@ -176,11 +193,13 @@ export const softDeleteTask = async (id: number): Promise<void> => {
  * Retrieves the next urgent, non-deleted, and incomplete task for a user ordered by earliest due date.
  *
  * @param profileId - Optional user profile ID filter.
+ * @param token - Optional JWT authentication token.
  * @returns The next pending task record, or null if no tasks are available.
  * @throws {Error} If database querying encounters an unexpected error.
  */
-export const getNextTask = async (profileId?: string): Promise<TaskResponse | null> => {
-  let query = supabase
+export const getNextTask = async (profileId?: string, token?: string): Promise<TaskResponse | null> => {
+  const db = getDbClient(token);
+  let query = db
     .from('tasks')
     .select('*')
     .is('deleted_at', null)
@@ -215,11 +234,13 @@ export const getNextTask = async (profileId?: string): Promise<TaskResponse | nu
  * Fetches all non-deleted tasks, optionally filtered by user profile ID, ordered by due date ascending.
  *
  * @param profileId - Optional user profile ID filter.
+ * @param token - Optional JWT authentication token.
  * @returns An array of normalized task response objects.
  * @throws {Error} If retrieving tasks from Supabase fails.
  */
-export const getAllTasks = async (profileId?: string): Promise<TaskResponse[]> => {
-  let query = supabase
+export const getAllTasks = async (profileId?: string, token?: string): Promise<TaskResponse[]> => {
+  const db = getDbClient(token);
+  let query = db
     .from('tasks')
     .select('*')
     .is('deleted_at', null)
@@ -235,18 +256,23 @@ export const getAllTasks = async (profileId?: string): Promise<TaskResponse[]> =
     throw new Error(`Failed to get tasks: ${error.message}`);
   }
 
-  return (data || []).map((task) => ({
-    id: task.id,
-    title: task.title,
-    description: task.description,
-    dueDate: task.due_date,
-    due_date: task.due_date,
-    isComplete: task.is_complete,
-    is_complete: task.is_complete,
-    profile_id: task.profile_id,
-    created_at: task.created_at,
-    deleted_at: task.deleted_at,
-  }));
+  return ((data as Record<string, unknown>[]) || []).map((task) => {
+    const item: TaskResponse = {
+      id: task['id'] as number,
+      title: (task['title'] as string) ?? null,
+      description: (task['description'] as string) ?? null,
+      dueDate: (task['due_date'] as string) ?? null,
+      due_date: (task['due_date'] as string) ?? null,
+      isComplete: Boolean(task['is_complete']),
+      is_complete: Boolean(task['is_complete']),
+      profile_id: (task['profile_id'] as string) ?? null,
+      deleted_at: (task['deleted_at'] as string) ?? null,
+    };
+    if (typeof task['created_at'] === 'string') {
+      item.created_at = task['created_at'];
+    }
+    return item;
+  });
 };
 
 export const getTasks = getAllTasks;

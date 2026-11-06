@@ -902,6 +902,18 @@ button.settings-task-trigger:hover {
     background: var(--task-color);
 }
 
+.settings-calendar-trigger {
+    border-color: #8b5cf6;
+    color: #8b5cf6;
+    background: #f5f3ff;
+}
+
+.settings-calendar-trigger.is-active,
+button.settings-calendar-trigger:hover {
+    color: var(--surface-color);
+    background: #8b5cf6;
+}
+
 .task-manager-panel {
     position: absolute;
     top: 0;
@@ -1448,4 +1460,164 @@ button.settings-task-trigger:hover {
 .focus-statistics-error button:focus-visible {
     outline: 3px solid #218b4340;
     outline-offset: 2px;
+}
+
+/* ==========================================================================
+   Calendar Feature Styles
+   ========================================================================== */
+
+.calendar-dashboard-bar {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    padding: 10px 16px;
+    margin-bottom: 16px;
+    background: #f8fafc;
+    border: 1px solid #e2e8f0;
+    border-radius: 8px;
+    font-size: 13px;
+}
+
+.calendar-dashboard-info {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.calendar-dashboard-icon {
+    font-size: 16px;
+}
+
+.calendar-dashboard-btn {
+    flex-shrink: 0;
+    padding: 6px 12px;
+    font-size: 12px;
+    font-weight: 600;
+    background: var(--surface-color);
+    color: var(--text-primary);
+    border: 1px solid #cbd5e1;
+    border-radius: 6px;
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.calendar-dashboard-btn:hover {
+    background: #8b5cf6;
+    color: #ffffff;
+    border-color: #8b5cf6;
+}
+
+.calendar-subheading {
+    margin: 16px 0 10px;
+    font-size: 14px;
+    font-weight: 700;
+    color: var(--text-primary);
+}
+
+.calendar-cards-container {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    margin-bottom: 18px;
+}
+
+.calendar-card-item {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    padding: 10px 14px;
+    background: var(--surface-color);
+    border: 1px solid #e2e8f0;
+    border-radius: 6px;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+}
+
+.calendar-card-details {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+    overflow: hidden;
+}
+
+.calendar-card-details strong {
+    font-size: 13px;
+    color: var(--text-primary);
+}
+
+.calendar-card-desc {
+    margin: 0;
+    font-size: 11px;
+    color: var(--text-secondary);
+}
+
+.calendar-card-url {
+    font-size: 10px;
+    color: #64748b;
+    font-family: monospace;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    max-width: 200px;
+}
+
+.calendar-card-actions {
+    display: flex;
+    gap: 6px;
+    flex-shrink: 0;
+}
+
+.calendar-sync-btn {
+    padding: 5px 9px;
+    font-size: 11px;
+    font-weight: 600;
+    color: #8b5cf6;
+    background: #f5f3ff;
+    border: 1px solid #ddd6fe;
+    border-radius: 4px;
+    cursor: pointer;
+    transition: all 0.15s ease;
+}
+
+.calendar-sync-btn:hover:not(:disabled) {
+    background: #8b5cf6;
+    color: #ffffff;
+}
+
+.calendar-delete-btn {
+    padding: 5px 8px;
+    font-size: 11px;
+    font-weight: 600;
+    color: var(--danger-color);
+    background: var(--error-background);
+    border: 1px solid #fecdd3;
+    border-radius: 4px;
+    cursor: pointer;
+    transition: all 0.15s ease;
+}
+
+.calendar-delete-btn:hover:not(:disabled) {
+    background: var(--danger-color);
+    color: #ffffff;
+}
+
+.calendar-loading,
+.calendar-empty {
+    font-size: 12px;
+    color: var(--text-secondary);
+    font-style: italic;
+    margin: 8px 0;
+}
+
+.calendar-add-button {
+    background: #8b5cf6 !important;
+    border-color: #7c3aed !important;
+}
+
+.calendar-add-button:hover:not(:disabled) {
+    background: #7c3aed !important;
 }

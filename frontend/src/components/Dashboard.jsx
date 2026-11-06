@@ -130,6 +130,8 @@ export default function Dashboard({
     taskActionNoticeFading = false,
     isYoutubePlayerEnabled = true,
     onLogout,
+    calendars = [],
+    onOpenCalendarManager = () => {},
 }) {
     const [tasks, setTasks] = useState([]);
     const [isLoading, setLoading] = useState(false);
@@ -288,6 +290,24 @@ export default function Dashboard({
                         Log Out
                     </button>
                 </div>
+            </div>
+
+            <div className="calendar-dashboard-bar">
+                <div className="calendar-dashboard-info">
+                    <span className="calendar-dashboard-icon">📅</span>
+                    <span className="calendar-dashboard-label">
+                        <strong>Calendars ({calendars.length}):</strong>{' '}
+                        {calendars.length > 0 ? calendars.map((c) => c.name).join(' • ') : 'No external calendar feeds synced'}
+                    </span>
+                </div>
+                <button
+                    type="button"
+                    className="calendar-dashboard-btn"
+                    onClick={onOpenCalendarManager}
+                    title="View or add calendars"
+                >
+                    {calendars.length > 0 ? 'Manage Calendars' : '+ Add Calendar'}
+                </button>
             </div>
 
             <div className="task-view-tabs" role="tablist">

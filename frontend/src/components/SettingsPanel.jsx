@@ -1,6 +1,7 @@
 import { useState } from 'react';
 
 const EMPTY_TASK_FORM = { title: '', description: '', dueDate: '' };
+const EMPTY_CALENDAR_FORM = { name: '', url: '', description: '' };
 
 const BACKGROUNDS = [
     { value: 'plain', label: 'Plain White', description: 'Clean white background' },
@@ -25,6 +26,22 @@ export default function SettingsPanel({
     onTaskManagerClose = () => {},
     onTaskFormChange = () => {},
     onCreateTask = (event) => event.preventDefault(),
+    isCalendarManagerOpen = false,
+    onCalendarManagerToggle = () => {},
+    onCalendarManagerClose = () => {},
+    calendars = [],
+    isLoadingCalendars = false,
+    calendarForm = EMPTY_CALENDAR_FORM,
+    onCalendarFormChange = () => {},
+    onAddCalendar = (event) => event.preventDefault(),
+    isAddingCalendar = false,
+    onDeleteCalendar = () => {},
+    deletingCalendarId = null,
+    onSyncCalendar = () => {},
+    syncingCalendarId = null,
+    calendarError = '',
+    calendarNotice = '',
+    calendarNoticeFading = false,
 }) {
     const [isBackgroundOpen, setBackgroundOpen] = useState(false);
 
@@ -35,7 +52,8 @@ export default function SettingsPanel({
                 className={`settings-shortcut settings-background-trigger${isBackgroundOpen ? ' is-active' : ''}`}
                 onClick={() => {
                     onTaskManagerClose?.();
-                    setBackgroundOpen((open) => !open)
+                    onCalendarManagerClose?.();
+                    setBackgroundOpen((open) => !open);
                 }}
                 title="Change Background"
             >
@@ -56,11 +74,25 @@ export default function SettingsPanel({
                 className={`settings-shortcut settings-task-trigger${isTaskManagerOpen ? ' is-active' : ''}`}
                 onClick={() => {
                     setBackgroundOpen(false);
+                    onCalendarManagerClose?.();
                     onTaskManagerToggle?.();
                 }}
                 title="Add a Task"
             >
                 <span>T</span>
+            </button>
+
+            <button
+                type="button"
+                className={`settings-shortcut settings-calendar-trigger${isCalendarManagerOpen ? ' is-active' : ''}`}
+                onClick={() => {
+                    setBackgroundOpen(false);
+                    onTaskManagerClose?.();
+                    onCalendarManagerToggle?.();
+                }}
+                title="Manage Calendars"
+            >
+                <span>C</span>
             </button>
 
             {isBackgroundOpen && (
@@ -114,7 +146,7 @@ export default function SettingsPanel({
                     )}
 
                     <form className="task-create-form" onSubmit={onCreateTask}>
-                        <label htmlFor="task-title">Task Title</label>
+                        <label htmlFor="new-task-title">Task Title</label>
                         <input
                             id="new-task-title"
                             name="title"
@@ -150,6 +182,126 @@ export default function SettingsPanel({
                             disabled={isCreatingTask}
                         >
                             {isCreatingTask ? 'Adding...' : 'Add Task'}
+                        </button>
+                    </form>
+                </section>
+            )}
+
+            {isCalendarManagerOpen && (
+                <section
+                    className="task-manager-panel calendar-manager-panel"
+                    id="calendar-manager-panel"
+                >
+                    <div className="task-manager-header">
+                        <div>
+                            <h2 id="calendar-manager-heading">Calendars</h2>
+                            <p>View connected calendars or import an iCal feed.</p>
+                        </div>
+                        <button
+                            type="button"
+                            className="task-manager-close"
+                            onClick={onCalendarManagerClose}
+                        >
+                            X
+                        </button>
+                    </div>
+
+                    {calendarError && (
+                        <p className="task-manager-feedback-error" role="alert">
+                            {calendarError}
+                        </p>
+                    )}
+                    {calendarNotice && (
+                        <p className={`task-manager-feedback is-success auto-dismiss-notice${calendarNoticeFading ? ' is-fading' : ''}`} role="status">
+                            {calendarNotice}
+                        </p>
+                    )}
+
+                    <div className="calendar-list-section">
+                        <h3 className="calendar-subheading">Connected Calendars ({calendars.length})</h3>
+                        {isLoadingCalendars ? (
+                            <p className="calendar-loading">Loading calendars...</p>
+                        ) : calendars.length === 0 ? (
+                            <p className="calendar-empty">No external calendars connected yet.</p>
+                        ) : (
+                            <div className="calendar-cards-container">
+                                {calendars.map((cal) => (
+                                    <div key={cal.id} className="calendar-card-item">
+                                        <div className="calendar-card-details">
+                                            <strong>{cal.name}</strong>
+                                            {cal.description && <p className="calendar-card-desc">{cal.description}</p>}
+                                            <span className="calendar-card-url" title={cal.ical_url}>
+                                                {cal.ical_url}
+                                            </span>
+                                        </div>
+                                        <div className="calendar-card-actions">
+                                            <button
+                                                type="button"
+                                                className="calendar-sync-btn"
+                                                onClick={() => onSyncCalendar(cal.id)}
+                                                disabled={syncingCalendarId === cal.id}
+                                                title="Sync upcoming events into tasks"
+                                            >
+                                                {syncingCalendarId === cal.id ? 'Syncing...' : 'Sync'}
+                                            </button>
+                                            <button
+                                                type="button"
+                                                className="calendar-delete-btn"
+                                                onClick={() => onDeleteCalendar(cal.id)}
+                                                disabled={deletingCalendarId === cal.id}
+                                                title="Remove this calendar"
+                                            >
+                                                {deletingCalendarId === cal.id ? '...' : 'Remove'}
+                                            </button>
+                                        </div>
+                                    </div>
+                                ))}
+                            </div>
+                        )}
+                    </div>
+
+                    <form className="task-create-form calendar-add-form" onSubmit={onAddCalendar}>
+                        <h3 className="calendar-subheading">Add a Calendar</h3>
+                        <label htmlFor="new-calendar-name">Calendar Name</label>
+                        <input
+                            id="new-calendar-name"
+                            name="name"
+                            type="text"
+                            placeholder="e.g. University Deadlines"
+                            value={calendarForm.name}
+                            onChange={(event) => onCalendarFormChange('name', event.target.value)}
+                            maxLength={150}
+                            required
+                        />
+
+                        <label htmlFor="new-calendar-url">iCal Feed URL (.ics)</label>
+                        <input
+                            id="new-calendar-url"
+                            name="url"
+                            type="url"
+                            placeholder="https://calendar.google.com/calendar/ical/.../basic.ics"
+                            value={calendarForm.url}
+                            onChange={(event) => onCalendarFormChange('url', event.target.value)}
+                            required
+                        />
+
+                        <label htmlFor="new-calendar-desc">Description <span>(optional)</span></label>
+                        <input
+                            id="new-calendar-desc"
+                            name="description"
+                            type="text"
+                            placeholder="e.g. Canvas syllabus calendar"
+                            value={calendarForm.description}
+                            onChange={(event) => onCalendarFormChange('description', event.target.value)}
+                            maxLength={300}
+                        />
+
+                        <button
+                            type="submit"
+                            className="task-manager-add-button calendar-add-button"
+                            disabled={isAddingCalendar}
+                        >
+                            {isAddingCalendar ? 'Adding & Syncing...' : '+ Add Calendar'}
                         </button>
                     </form>
                 </section>

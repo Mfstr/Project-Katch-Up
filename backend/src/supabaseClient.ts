@@ -9,3 +9,17 @@ if (!supabaseUrl || !supabaseKey) {
 }
 
 export const supabase = createClient(supabaseUrl, supabaseKey);
+
+export const createAuthClient = (token?: string) => {
+  if (token) {
+    return createClient(supabaseUrl, supabaseKey, {
+      global: {
+        headers: { Authorization: `Bearer ${token}` },
+      },
+    });
+  }
+  return supabase;
+};
+
+// Also attach to supabase instance so modules that only import `supabase` can access it safely
+(supabase as unknown as { createAuthClient?: typeof createAuthClient }).createAuthClient = createAuthClient;

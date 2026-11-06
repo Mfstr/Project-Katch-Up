@@ -6,13 +6,17 @@ import pluginReact from 'eslint-plugin-react';
 export default tseslint.config(
   {
     ignores: [
-      '**/node_modules/**',
-      '**/dist/**',
-      '**/build/**',
-      '**/coverage/**',
-      '**/.next/**',
-      '**/.vite/**',
-    ],
+    '**/node_modules/**',
+    '**/dist/**',
+    '**/build/**',
+    '**/coverage/**',
+    '**/.next/**',
+    '**/.vite/**',
+    '**/.playwright/**',
+    '**/.test-results/**',
+    '**/playwright-report/**',
+    '**/test-results/**',
+],
   },
   {
     files: ['**/*.{js,mjs,cjs,jsx}'],

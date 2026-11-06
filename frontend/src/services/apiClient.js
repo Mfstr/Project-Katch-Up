@@ -266,4 +266,50 @@ export async function updateTimerPreferences(preferences) {
   });
 }
 
+/**
+ * Fetches all registered calendars for the authenticated user.
+ *
+ * @returns {Promise<Array<object>>} List of calendar records.
+ */
+export async function getCalendars() {
+  return apiClient('/api/calendars');
+}
+
+/**
+ * Adds and registers a new iCal calendar subscription and triggers auto-sync.
+ *
+ * @param {object} calendar - Calendar attributes including name, url, and optional description.
+ * @returns {Promise<object>} The created calendar record.
+ */
+export async function addCalendar(calendar) {
+  return apiClient('/api/calendars', {
+    method: 'POST',
+    body: JSON.stringify(calendar),
+  });
+}
+
+/**
+ * Removes an iCal calendar registration by its ID.
+ *
+ * @param {string|number} id - Unique identifier of the calendar.
+ * @returns {Promise<void>} Resolves when calendar is removed.
+ */
+export async function deleteCalendar(id) {
+  return apiClient(`/api/calendars/${id}`, {
+    method: 'DELETE',
+  });
+}
+
+/**
+ * Triggers synchronization for a specific calendar feed to import upcoming events as tasks.
+ *
+ * @param {string|number} id - Unique identifier of the calendar to sync.
+ * @returns {Promise<object>} Sync confirmation with count of imported tasks.
+ */
+export async function syncCalendar(id) {
+  return apiClient(`/api/calendars/${id}/sync`, {
+    method: 'POST',
+  });
+}
+
 export default apiClient;
