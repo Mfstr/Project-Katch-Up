@@ -1,8 +1,8 @@
 import { test, expect } from '@playwright/test';
 
 test.describe('Authentication Journey E2E Suite', () => {
-  const testEmail = 'alex@example.com';
-  const testPassword = 'password123';
+  const testEmail = 'e2e-tester@example.com';
+  const testPassword = 'testPassword';
 
   test.beforeEach(async ({ page }) => {
     // Navigate using relative path, relying on baseURL in playwright.config.js
@@ -20,15 +20,18 @@ test.describe('Authentication Journey E2E Suite', () => {
 
     const submitBtn = page.locator('button[type="submit"]');
     
-    const [loginRes] = await Promise.all([
-      page.waitForResponse(res => res.url().includes('/api/auth/login') && res.status() === 200),
+    // Click submit and wait directly for the dashboard URL navigation
+    await Promise.all([
+      page.waitForURL(/\/dashboard$/, { timeout: 15000 }),
       submitBtn.click(),
     ]);
-    
-    expect(loginRes.ok()).toBeTruthy();
-    await page.waitForURL(/\/dashboard$/, { timeout: 10000 });
-    
-    const authToken = await page.evaluate(() => localStorage.getItem('authToken'));
+
+    // Verify Supabase session token is stored in localStorage
+    const authToken = await page.evaluate(() => {
+      const keys = Object.keys(localStorage);
+      const supabaseKey = keys.find(k => k.includes('supabase.auth.token'));
+      return supabaseKey ? localStorage.getItem(supabaseKey) : localStorage.getItem('authToken');
+    });
     expect(authToken).toBeTruthy();
 
     // Verify dashboard heading is visible

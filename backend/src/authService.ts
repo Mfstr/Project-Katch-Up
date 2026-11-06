@@ -9,6 +9,39 @@ import { supabase } from './supabaseClient.js';
  * @throws {Error} If registration fails or inputs are invalid.
  */
 export const registerUser = async (email: string, password: string) => {
+  if (
+    process.env.SUPABASE_SERVICE_ROLE_KEY &&
+    typeof (supabase.auth as unknown as { admin?: { createUser?: unknown } }).admin?.createUser === 'function'
+  ) {
+    const adminAuth = (supabase.auth as unknown as {
+      admin: {
+        createUser: (opts: { email: string; password: string; email_confirm: boolean }) => Promise<{
+          data: { user: unknown };
+          error: Error | null;
+        }>;
+      };
+    }).admin;
+
+    const { data: adminData, error: adminError } = await adminAuth.createUser({
+      email,
+      password,
+      email_confirm: true,
+    });
+
+    if (adminError) throw new Error(`Registration failed: ${adminError.message}`);
+
+    try {
+      const signInRes = await supabase.auth.signInWithPassword({ email, password });
+      if (signInRes.data?.session) {
+        return signInRes.data;
+      }
+    } catch {
+      // Fall through to return adminData
+    }
+
+    return adminData;
+  }
+
   const { data, error } = await supabase.auth.signUp({
     email,
     password,
