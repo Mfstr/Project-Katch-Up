@@ -1,9 +1,11 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
+import { useNavigate } from 'react-router-dom'
 
 import {
     createTask,
     deleteTask,
     getTimerStatus,
+    logout,
     pauseTimer,
     resetTimer,
     startTimer,
@@ -56,6 +58,7 @@ function useAutoDismissNotice(notice, clearNotice, fadeAfterMs = 3500, fadeDurat
 }
 
 export default function SmartFocusUI() {
+    const navigate = useNavigate();
     const [task, setTask] = useState(readSavedTask);
     const [phase, setPhase] = useState('FOCUS');
     const [remainingSeconds, setRemainingSeconds] = useState(DEFAULT_FOCUS_SECONDS);
@@ -309,6 +312,27 @@ export default function SmartFocusUI() {
             );
         } finally {
             setLoading(false);
+        }
+    };
+
+    const handleLogout = async () => {
+        const confirmed = window.confirm('Are you sure you want to log out?');
+        if (!confirmed) return;
+
+        try {
+            await logout();
+        } catch {
+            // Logout helper clears local auth token when server request fails.
+        } finally {
+            try {
+                window.sessionStorage.removeItem('project-katchup-session-started');
+                window.sessionStorage.removeItem('project-katchup-selected-task');
+                window.localStorage.removeItem('project-katchup-selected-task');
+            } catch {
+                // Will still logout if browser storage is unavailable
+            }
+
+            navigate('/login', { replace: true });
         }
     };
 
@@ -566,6 +590,7 @@ export default function SmartFocusUI() {
                     taskActionNotice={taskActionNotice}
                     taskActionNoticeFading={isTaskActionNoticeFading}
                     isYoutubePlayerEnabled={isYoutubePlayerEnabled}
+                    onLogout={handleLogout}
                 />
 
                 <SettingsPanel 

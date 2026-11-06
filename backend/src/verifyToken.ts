@@ -12,6 +12,15 @@ declare global {
   }
 }
 
+/**
+ * Express middleware to validate Supabase JWT tokens in the Authorization header.
+ * Attaches the authenticated User object to req.user on success.
+ *
+ * @param req - Express request with incoming Authorization header.
+ * @param res - Express response for returning authentication error status codes.
+ * @param next - Express next middleware function.
+ * @returns Resolves when user token is verified and forwarded to next handler.
+ */
 export const verifyToken = async (req: Request, res: Response, next: NextFunction) => {
   const authHeader = req.headers.authorization;
 

@@ -1,5 +1,13 @@
 import { supabase } from './supabaseClient.js';
 
+/**
+ * Registers a new user account with email and password, provisioning their initial profile.
+ *
+ * @param email - The user's registration email address.
+ * @param password - The user's plain-text account password.
+ * @returns The Supabase signUp response object containing user credentials and session data.
+ * @throws {Error} If registration fails or inputs are invalid.
+ */
 export const registerUser = async (email: string, password: string) => {
   const { data, error } = await supabase.auth.signUp({
     email,
@@ -19,6 +27,14 @@ export const registerUser = async (email: string, password: string) => {
   return data;
 };
 
+/**
+ * Authenticates an existing user using email and password credentials.
+ *
+ * @param email - The user's account email address.
+ * @param password - The user's account password.
+ * @returns The Supabase authentication data containing the JWT access token and user metadata.
+ * @throws {Error} If credentials are invalid or login fails.
+ */
 export const loginUser = async (email: string, password: string) => {
   const { data, error } = await supabase.auth.signInWithPassword({
     email,
@@ -29,6 +45,13 @@ export const loginUser = async (email: string, password: string) => {
   return data;
 };
 
+/**
+ * Terminates the active session and logs out the user, invalidating the session token.
+ *
+ * @param token - Optional JWT access token to invalidate via admin or client sign-out.
+ * @returns A confirmation message indicating successful logout.
+ * @throws {Error} If sign-out fails in Supabase.
+ */
 export const logoutUser = async (token?: string) => {
   if (token && typeof (supabase.auth as { admin?: { signOut?: (jwt: string) => Promise<{ error: Error | null }> } }).admin?.signOut === 'function') {
     try {
