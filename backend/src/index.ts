@@ -450,7 +450,19 @@ app.use((err: unknown, _req: Request, res: Response, _next: NextFunction) => {
 const PORT = process.env.PORT ?? 5050;
 
 if (process.env.NODE_ENV !== 'test') {
-  app.listen(PORT, () => logger.info({ port: PORT }, `Server running on port ${PORT}.`));
+  const server = app.listen(PORT, () => logger.info({ port: PORT }, `Server running on port ${PORT}.`));
+
+  const handleShutdown = () => {
+    logger.info('Shutting down server gracefully...');
+    server.close(() => {
+      process.exit(0);
+    });
+    // Force close if still hanging after 1s
+    setTimeout(() => process.exit(0), 1000).unref();
+  };
+
+  process.on('SIGINT', handleShutdown);
+  process.on('SIGTERM', handleShutdown);
 }
 
 export default app;
