@@ -1,12 +1,14 @@
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { useState } from 'react';
+import { API_BASE_URL, storeSession } from '../services/apiClient.js';
 
 export default function Authorize() {
     const location = useLocation();
     const navigate = useNavigate();
     const isRegister = location.pathname === '/register';
     
-    const [error, setError] = useState('');
+    const sessionExpired = new URLSearchParams(location.search).get('expired') === '1';
+    const [error, setError] = useState(sessionExpired ? 'Your session has expired. Please log in again.' : '');
     const [isLoading, setIsLoading] = useState(false);
 
     const handleSubmit = async (e) => {
@@ -20,24 +22,26 @@ export default function Authorize() {
         const endpoint = isRegister ? '/api/auth/register' : '/api/auth/login';
 
         try {
-            const API_BASE_URL = import.meta.env.VITE_API_URL?.replace(/\/$/, '') || 'http://localhost:5050';
-            const res = await fetch(`${API_BASE_URL}${endpoint}`, {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ email, password })
-            });
+            let res;
+            try {
+                res = await fetch(`${API_BASE_URL}${endpoint}`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ email, password })
+                });
+            } catch {
+                throw new Error('Could not reach the server. It may be waking up; please try again in a minute.');
+            }
 
-            const body = await res.json();
+            const body = await res.json().catch(() => ({}));
             if (!res.ok) {
                 throw new Error(body.error || body.message || 'Authentication failed');
             }
 
-            const token = body.session?.access_token;
-            if (token) {
-                localStorage.setItem('authToken', token);
+            if (storeSession(body.session)) {
                 navigate('/dashboard');
             } else if (isRegister && (body.user || body.id)) {
-                setError('Registration successful! Please check your email to confirm your account (or ensure email confirmation is disabled in Supabase), then log in.');
+                setError('Account created. Please check your email to confirm your account, then log in.');
                 navigate('/login');
             } else {
                 throw new Error('No access token returned from server.');
@@ -66,7 +70,7 @@ export default function Authorize() {
                     name="email"
                     type="email"
                     autoComplete="email"
-                    defaultValue="alex@gmail.com"
+                    maxLength={254}
                     required
                 />
 
@@ -76,7 +80,8 @@ export default function Authorize() {
                     name="password"
                     type="password"
                     autoComplete={isRegister ? 'new-password' : 'current-password'}
-                    defaultValue="password123"
+                    minLength={isRegister ? 8 : undefined}
+                    maxLength={72}
                     required
                 />
 

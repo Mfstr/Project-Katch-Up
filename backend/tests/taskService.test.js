@@ -195,13 +195,13 @@ describe('Task Service', () => {
         profile_id: 'user-99',
       });
 
+      // profile_id is ignored: ownership cannot be transferred through an update
       expect(supabase.update).toHaveBeenCalledWith({
         title: 'Snake Title',
         description: 'Snake Desc',
         due_date: '2026-11-10',
         is_complete: true,
         deleted_at: '2026-11-10T12:00:00.000Z',
-        profile_id: 'user-99',
       });
       expect(result?.title).toBe('Snake Title');
     });

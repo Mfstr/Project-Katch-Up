@@ -12,6 +12,15 @@ jest.unstable_mockModule('../src/supabaseClient.js', () => ({
     },
 }));
 
+// safeFetch does DNS checks; in unit tests delegate straight to the mocked global fetch
+jest.unstable_mockModule('../src/safeFetch.js', () => ({
+    fetchPublicText: async (url) => {
+        const response = await global.fetch(url);
+        if (!response.ok) throw new Error(`Failed to fetch calendar: ${response.status}`);
+        return response.text();
+    },
+}));
+
 jest.unstable_mockModule('node-ical', () => ({
     default: {
         sync: {

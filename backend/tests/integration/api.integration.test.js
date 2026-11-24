@@ -34,6 +34,7 @@ jest.unstable_mockModule('../../src/authService.js', () => ({
   registerUser: jest.fn().mockResolvedValue({ user: { id: '1' }, token: 'mock-jwt' }),
   loginUser: jest.fn().mockResolvedValue({ user: { id: '1' }, token: 'mock-jwt' }),
   logoutUser: jest.fn().mockResolvedValue({ message: 'Logged out successfully' }),
+  refreshUserSession: jest.fn().mockResolvedValue({ session: { access_token: 'new-jwt' } }),
 }));
 
 jest.unstable_mockModule('../../src/insightsService.js', () => ({
@@ -282,7 +283,8 @@ describe('Task Management Routes', () => {
 
     expect(response.status).toBe(200);
     expect(response.body).toEqual(updatedTask);
-    expect(updateTask).toHaveBeenCalledWith(10, updates);
+    // Ownership filter: the authenticated user's id is always passed through
+    expect(updateTask).toHaveBeenCalledWith(10, updates, undefined, 'test-user-id');
   });
 
   it('PUT /api/tasks/:id rejects invalid non-numeric IDs', async () => {
@@ -306,7 +308,8 @@ describe('Task Management Routes', () => {
 
     const response = await request(app).get('/api/tasks');
     expect(response.status).toBe(500);
-    expect(response.body).toEqual({ error: 'Database offline' });
+    // Internal details are logged, never returned to the client
+    expect(response.body).toEqual({ error: 'Internal Server Error' });
   });
 
   it('GET /api/tasks/next returns next task when available', async () => {
@@ -334,7 +337,8 @@ describe('Task Management Routes', () => {
 
     const response = await request(app).get('/api/tasks/next');
     expect(response.status).toBe(500);
-    expect(response.body).toEqual({ error: 'Query failed' });
+    // Internal details are logged, never returned to the client
+    expect(response.body).toEqual({ error: 'Internal Server Error' });
   });
 
   it('POST /api/tasks returns 500 when createTask fails', async () => {
@@ -343,7 +347,8 @@ describe('Task Management Routes', () => {
     const response = await request(app).post('/api/tasks').send({ title: 'Valid title' });
 
     expect(response.status).toBe(500);
-    expect(response.body).toEqual({ error: 'Insert error' });
+    // Internal details are logged, never returned to the client
+    expect(response.body).toEqual({ error: 'Internal Server Error' });
   });
 
   it('PUT /api/tasks/:id returns 500 when updateTask fails', async () => {
@@ -352,7 +357,8 @@ describe('Task Management Routes', () => {
     const response = await request(app).put('/api/tasks/10').send({ title: 'New title' });
 
     expect(response.status).toBe(500);
-    expect(response.body).toEqual({ error: 'Update failed in db' });
+    // Internal details are logged, never returned to the client
+    expect(response.body).toEqual({ error: 'Internal Server Error' });
   });
 
   it('DELETE /api/tasks/:id handles valid task soft-delete', async () => {
@@ -482,3 +488,77 @@ describe('Feature Flag Integration on Routes', () => {
       expect(response.body).toHaveProperty('updatedSettings');
     });
   });
+
+describe('Security hardening', () => {
+  beforeEach(() => {
+    jest.clearAllMocks();
+  });
+
+  it('POST /api/tasks ignores a client-supplied profile_id and uses the authenticated user', async () => {
+    createTask.mockResolvedValueOnce({ id: 5, title: 'Mine' });
+
+    const response = await request(app)
+      .post('/api/tasks')
+      .send({ title: 'Mine', profile_id: 'someone-else', deleted_at: '2020-01-01' });
+
+    expect(response.status).toBe(201);
+    const [payload] = createTask.mock.calls[0];
+    expect(payload.profile_id).toBe('test-user-id');
+    expect(payload).not.toHaveProperty('deleted_at');
+  });
+
+  it('PUT /api/tasks/:id strips ownership fields from the update', async () => {
+    updateTask.mockResolvedValueOnce({ id: 3, title: 'x' });
+
+    await request(app).put('/api/tasks/3').send({ title: 'x', profile_id: 'someone-else', profileId: 'someone-else' });
+
+    expect(updateTask).toHaveBeenCalledWith(3, { title: 'x' }, undefined, 'test-user-id');
+  });
+
+  it('POST /api/tasks rejects oversized titles', async () => {
+    const response = await request(app).post('/api/tasks').send({ title: 'a'.repeat(501) });
+
+    expect(response.status).toBe(400);
+    expect(createTask).not.toHaveBeenCalled();
+  });
+
+  it('POST /api/calendars rejects URLs that point at private networks', async () => {
+    for (const url of ['http://127.0.0.1/cal.ics', 'http://169.254.169.254/latest/meta-data', 'file:///etc/passwd', 'http://10.0.0.5/x.ics']) {
+      const response = await request(app).post('/api/calendars').send({ url, name: 'Bad' });
+      expect(response.status).toBe(400);
+    }
+  });
+
+  it('POST /api/auth/register rejects short passwords and malformed emails', async () => {
+    const weak = await request(app).post('/api/auth/register').send({ email: 'a@b.co', password: 'short' });
+    expect(weak.status).toBe(400);
+
+    const badEmail = await request(app).post('/api/auth/register').send({ email: 'not-an-email', password: 'longenough123' });
+    expect(badEmail.status).toBe(400);
+  });
+
+  it('POST /api/auth/login returns a generic message on failure', async () => {
+    const { loginUser } = await import('../../src/authService.js');
+    loginUser.mockRejectedValueOnce(new Error('Login failed: Invalid login credentials'));
+
+    const response = await request(app).post('/api/auth/login').send({ email: 'x@y.co', password: 'whatever1' });
+
+    expect(response.status).toBe(401);
+    expect(response.body).toEqual({ error: 'Invalid email or password.' });
+  });
+
+  it('only allows browser requests from configured origins', async () => {
+    const allowed = await request(app).get('/api/health').set('Origin', 'http://localhost:5173');
+    expect(allowed.headers['access-control-allow-origin']).toBe('http://localhost:5173');
+
+    const blocked = await request(app).get('/api/health').set('Origin', 'https://evil.example');
+    expect(blocked.headers['access-control-allow-origin']).toBeUndefined();
+  });
+
+  it('GET /api/health responds without authentication', async () => {
+    const response = await request(app).get('/api/health');
+
+    expect(response.status).toBe(200);
+    expect(response.body).toEqual({ status: 'ok' });
+  });
+});

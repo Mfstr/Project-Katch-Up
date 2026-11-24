@@ -120,6 +120,7 @@ export const createTask = async (
  * @param id - Numeric ID of the task to update.
  * @param updates - Partial task properties to update (e.g. title, description, dueDate, isComplete).
  * @param token - Optional JWT authentication token.
+ * @param profileId - Optional owner ID; when given, only that user's task can be updated.
  * @returns The updated task response record, or null if the task was not found.
  * @throws {Error} If the database update fails.
  */
@@ -127,6 +128,7 @@ export const updateTask = async (
   id: number,
   updates: UpdateTaskInput,
   token?: string,
+  profileId?: string,
 ): Promise<TaskResponse | null> => {
   const db = getDbClient(token);
   const updatePayload: Record<string, unknown> = {};
@@ -144,18 +146,13 @@ export const updateTask = async (
     updatePayload.is_complete = updates.isComplete;
   }
   if (updates.deleted_at !== undefined) updatePayload.deleted_at = updates.deleted_at;
-  if (updates.profile_id !== undefined) {
-    updatePayload.profile_id = updates.profile_id;
-  } else if (updates.profileId !== undefined) {
-    updatePayload.profile_id = updates.profileId;
-  }
+  // Task ownership (profile_id) can never be changed through an update.
 
-  const { data, error } = await db
-    .from('tasks')
-    .update(updatePayload)
-    .eq('id', id)
-    .select()
-    .single();
+  let query = db.from('tasks').update(updatePayload).eq('id', id);
+  if (profileId) {
+    query = query.eq('profile_id', profileId);
+  }
+  const { data, error } = await query.select().single();
 
   if (error) {
     if (error.code === 'PGRST116') return null;
@@ -176,15 +173,20 @@ export const updateTask = async (
  *
  * @param id - Numeric ID of the task to soft delete.
  * @param token - Optional JWT authentication token.
+ * @param profileId - Optional owner ID; when given, only that user's task can be deleted.
  * @returns Resolves when the task is marked deleted.
  * @throws {Error} If the soft delete update fails in Supabase.
  */
-export const softDeleteTask = async (id: number, token?: string): Promise<void> => {
+export const softDeleteTask = async (id: number, token?: string, profileId?: string): Promise<void> => {
   const db = getDbClient(token);
-  const { error } = await db
+  let query = db
     .from('tasks')
     .update({ deleted_at: new Date().toISOString() })
     .eq('id', id);
+  if (profileId) {
+    query = query.eq('profile_id', profileId);
+  }
+  const { error } = await query;
 
   if (error) throw new Error(`Failed to delete task: ${error.message}`);
 };
