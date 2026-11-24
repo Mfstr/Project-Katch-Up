@@ -1,4 +1,7 @@
-import { supabase } from './supabaseClient.js';
+import { createIsolatedClient } from './supabaseClient.js';
+
+// Every auth call uses its own short-lived client. Sessions must never be stored on the shared
+// server client, otherwise one user's session could be used for another user's requests.
 
 /**
  * Registers a new user account with email and password, provisioning their initial profile.
@@ -9,54 +12,16 @@ import { supabase } from './supabaseClient.js';
  * @throws {Error} If registration fails or inputs are invalid.
  */
 export const registerUser = async (email: string, password: string) => {
-  if (
-    process.env.SUPABASE_SERVICE_ROLE_KEY &&
-    typeof (supabase.auth as unknown as { admin?: { createUser?: unknown } }).admin?.createUser === 'function'
-  ) {
-    const adminAuth = (supabase.auth as unknown as {
-      admin: {
-        createUser: (opts: { email: string; password: string; email_confirm: boolean }) => Promise<{
-          data: { user: unknown };
-          error: Error | null;
-        }>;
-      };
-    }).admin;
+  const client = createIsolatedClient();
 
-    const { data: adminData, error: adminError } = await adminAuth.createUser({
-      email,
-      password,
-      email_confirm: true,
-    });
-
-    if (adminError) throw new Error(`Registration failed: ${adminError.message}`);
-
-    try {
-      const signInRes = await supabase.auth.signInWithPassword({ email, password });
-      if (signInRes.data?.session) {
-        return signInRes.data;
-      }
-    } catch {
-      // Fall through to return adminData
-    }
-
-    return adminData;
-  }
-
-  const { data, error } = await supabase.auth.signUp({
+  const { data, error } = await client.auth.signUp({
     email,
     password,
   });
 
   if (error) throw new Error(`Registration failed: ${error.message}`);
 
-  if (data?.user?.id && typeof supabase.from === 'function') {
-    try {
-      await supabase.from('profiles').upsert({ id: data.user.id }, { onConflict: 'id' });
-    } catch {
-      // In case database triggers or RLS handle profile provisioning
-    }
-  }
-
+  // Profiles are created by the on_auth_user_created database trigger.
   return data;
 };
 
@@ -69,7 +34,8 @@ export const registerUser = async (email: string, password: string) => {
  * @throws {Error} If credentials are invalid or login fails.
  */
 export const loginUser = async (email: string, password: string) => {
-  const { data, error } = await supabase.auth.signInWithPassword({
+  const client = createIsolatedClient();
+  const { data, error } = await client.auth.signInWithPassword({
     email,
     password,
   });
@@ -79,26 +45,35 @@ export const loginUser = async (email: string, password: string) => {
 };
 
 /**
+ * Exchanges a refresh token for a new session so users stay signed in past the
+ * one-hour access token lifetime.
+ *
+ * @param refreshToken - The refresh token issued at login.
+ * @returns The refreshed Supabase session data.
+ * @throws {Error} If the refresh token is invalid or expired.
+ */
+export const refreshUserSession = async (refreshToken: string) => {
+  const client = createIsolatedClient();
+  const { data, error } = await client.auth.refreshSession({ refresh_token: refreshToken });
+
+  if (error || !data.session) throw new Error(`Session refresh failed: ${error?.message ?? 'no session returned'}`);
+  return data;
+};
+
+/**
  * Terminates the active session and logs out the user, invalidating the session token.
  *
- * @param token - Optional JWT access token to invalidate via admin or client sign-out.
+ * @param token - JWT access token of the session to invalidate.
  * @returns A confirmation message indicating successful logout.
  * @throws {Error} If sign-out fails in Supabase.
  */
 export const logoutUser = async (token?: string) => {
-  if (token && typeof (supabase.auth as { admin?: { signOut?: (jwt: string) => Promise<{ error: Error | null }> } }).admin?.signOut === 'function') {
-    try {
-      const { error } = await (supabase.auth as unknown as { admin: { signOut: (jwt: string) => Promise<{ error: Error | null }> } }).admin.signOut(token);
-      if (!error) {
-        return { message: 'Logged out successfully' };
-      }
-    } catch {
-      // Fall back to client signOut
-    }
+  if (!token) {
+    return { message: 'Logged out successfully' };
   }
 
-  const { error } = await supabase.auth.signOut();
+  const client = createIsolatedClient();
+  const { error } = await client.auth.admin.signOut(token);
   if (error) throw new Error(`Logout failed: ${error.message}`);
   return { message: 'Logged out successfully' };
 };
-

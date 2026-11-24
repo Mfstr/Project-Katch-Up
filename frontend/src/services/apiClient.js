@@ -1,5 +1,8 @@
 const API_BASE_URL = import.meta.env.VITE_API_URL?.replace(/\/$/, '') || 'http://localhost:5050';
 const AUTH_TOKEN_KEY = 'authToken';
+const REFRESH_TOKEN_KEY = 'refreshToken';
+
+export { API_BASE_URL };
 
 /**
  * Retrieves the stored JWT authentication token from browser localStorage.
@@ -11,15 +14,78 @@ export function getAuthToken() {
 }
 
 /**
+ * Stores the access and refresh tokens from a Supabase session.
+ *
+ * @param {{access_token?: string, refresh_token?: string}|null|undefined} session - Session returned by the auth API.
+ * @returns {boolean} True if an access token was stored.
+ */
+export function storeSession(session) {
+  if (!session?.access_token) return false;
+  localStorage.setItem(AUTH_TOKEN_KEY, session.access_token);
+  if (session.refresh_token) {
+    localStorage.setItem(REFRESH_TOKEN_KEY, session.refresh_token);
+  }
+  return true;
+}
+
+/** Removes all stored authentication tokens. */
+export function clearSession() {
+  localStorage.removeItem(AUTH_TOKEN_KEY);
+  localStorage.removeItem(REFRESH_TOKEN_KEY);
+}
+
+let refreshInFlight = null;
+
+/**
+ * Exchanges the stored refresh token for a new access token. Concurrent callers share one request.
+ *
+ * @returns {Promise<boolean>} True if a fresh access token was stored.
+ */
+async function refreshAccessToken() {
+  const refreshToken = localStorage.getItem(REFRESH_TOKEN_KEY);
+  if (!refreshToken) return false;
+
+  if (!refreshInFlight) {
+    refreshInFlight = (async () => {
+      try {
+        const response = await fetch(`${API_BASE_URL}/api/auth/refresh`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ refresh_token: refreshToken }),
+        });
+        if (!response.ok) return false;
+        const body = await response.json();
+        return storeSession(body?.session);
+      } catch {
+        return false;
+      } finally {
+        refreshInFlight = null;
+      }
+    })();
+  }
+  return refreshInFlight;
+}
+
+/** Clears the session and sends the user back to the login page. */
+function handleSessionExpired() {
+  clearSession();
+  if (window.location.pathname !== '/login') {
+    window.location.assign('/login?expired=1');
+  }
+}
+
+/**
  * Universal fetch wrapper for the Project Katch-Up REST API.
- * Automatically attaches Authorization header if user is logged in and handles JSON/text parsing.
+ * Automatically attaches Authorization header if user is logged in, transparently refreshes
+ * an expired session once, and handles JSON/text parsing.
  *
  * @param {string} path - API endpoint path (e.g. '/api/tasks').
  * @param {RequestInit} [options={}] - Standard fetch configuration options.
+ * @param {boolean} [isRetry=false] - Internal flag set after a token refresh.
  * @returns {Promise<any>} Parsed response JSON or text body.
  * @throws {Error} If the HTTP response status is not ok (4xx or 5xx).
  */
-export async function apiClient(path, options = {}) {
+export async function apiClient(path, options = {}, isRetry = false) {
   const authToken = getAuthToken();
 
   const headers = {
@@ -31,10 +97,25 @@ export async function apiClient(path, options = {}) {
     headers.Authorization = `Bearer ${authToken}`;
   }
 
-  const response = await fetch(`${API_BASE_URL}${path}`, {
-    ...options,
-    headers,
-  });
+  let response;
+  try {
+    response = await fetch(`${API_BASE_URL}${path}`, {
+      ...options,
+      headers,
+    });
+  } catch {
+    // Network failure or a sleeping backend that has not woken up yet
+    throw new Error('Could not reach the server. Please check your connection and try again.');
+  }
+
+  const isAuthRoute = path.startsWith('/api/auth/');
+  if (response.status === 401 && authToken && !isAuthRoute) {
+    if (!isRetry && (await refreshAccessToken())) {
+      return apiClient(path, options, true);
+    }
+    handleSessionExpired();
+    throw new Error('Your session has expired. Please log in again.');
+  }
 
   let body = null;
   const contentType = response.headers.get('content-type') || '';
@@ -186,8 +267,10 @@ export async function getTimerStatus() {
 export async function logout() {
   try {
     await apiClient('/api/auth/logout', { method: 'POST' });
+  } catch {
+    // Logging out locally is what matters; ignore server-side failures
   } finally {
-    localStorage.removeItem(AUTH_TOKEN_KEY);
+    clearSession();
   }
 }
 

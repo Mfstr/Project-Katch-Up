@@ -1,17 +1,22 @@
 import { jest } from '@jest/globals';
 
 // 1. Mock the Supabase client entirely using inline jest.fn() builders
-jest.unstable_mockModule('../src/supabaseClient.js', () => ({
-    supabase: {
-        auth: {
-            signUp: jest.fn(),
-            signInWithPassword: jest.fn(),
-            signOut: jest.fn(),
-        },
+// authService builds a fresh client per call via createIsolatedClient; return one shared mock
+const isolatedClient = {
+    auth: {
+        signUp: jest.fn(),
+        signInWithPassword: jest.fn(),
+        signOut: jest.fn(),
+        refreshSession: jest.fn(),
+        admin: { signOut: jest.fn() },
     },
+};
+jest.unstable_mockModule('../src/supabaseClient.js', () => ({
+    supabase: isolatedClient,
+    createIsolatedClient: jest.fn(() => isolatedClient),
 }));
 
-const { registerUser, loginUser, logoutUser } = await import('../src/authService.js');
+const { registerUser, loginUser, logoutUser, refreshUserSession } = await import('../src/authService.js');
 const { supabase } = await import('../src/supabaseClient.js');
 
 describe('Auth Service', () => {
@@ -73,22 +78,51 @@ describe('Auth Service', () => {
     });
 
     describe('logoutUser', () => {
-        it('successfully logs out a user', async () => {
-            supabase.auth.signOut.mockResolvedValueOnce({ error: null });
+        it('revokes the session for the given access token', async () => {
+            supabase.auth.admin.signOut.mockResolvedValueOnce({ error: null });
 
             const result = await logoutUser('fake-token');
 
-            expect(supabase.auth.signOut).toHaveBeenCalled();
+            expect(supabase.auth.admin.signOut).toHaveBeenCalledWith('fake-token');
+            expect(result).toEqual({ message: 'Logged out successfully' });
+        });
+
+        it('is a no-op without a token and never signs out the shared client', async () => {
+            const result = await logoutUser();
+
+            expect(supabase.auth.admin.signOut).not.toHaveBeenCalled();
+            expect(supabase.auth.signOut).not.toHaveBeenCalled();
             expect(result).toEqual({ message: 'Logged out successfully' });
         });
 
         it('throws an error when logout fails', async () => {
             const mockError = { message: 'Session expired or invalid' };
-            supabase.auth.signOut.mockResolvedValueOnce({ error: mockError });
+            supabase.auth.admin.signOut.mockResolvedValueOnce({ error: mockError });
 
             await expect(
-                logoutUser()
+                logoutUser('expired-token')
             ).rejects.toThrow('Logout failed: Session expired or invalid');
+        });
+    });
+
+    describe('refreshUserSession', () => {
+        it('returns a new session for a valid refresh token', async () => {
+            const refreshed = { session: { access_token: 'new-jwt', refresh_token: 'new-refresh' }, user: { id: '123' } };
+            supabase.auth.refreshSession.mockResolvedValueOnce({ data: refreshed, error: null });
+
+            const result = await refreshUserSession('old-refresh');
+
+            expect(supabase.auth.refreshSession).toHaveBeenCalledWith({ refresh_token: 'old-refresh' });
+            expect(result).toEqual(refreshed);
+        });
+
+        it('throws when the refresh token is rejected', async () => {
+            supabase.auth.refreshSession.mockResolvedValueOnce({
+                data: { session: null, user: null },
+                error: { message: 'Invalid Refresh Token' },
+            });
+
+            await expect(refreshUserSession('bad')).rejects.toThrow('Session refresh failed: Invalid Refresh Token');
         });
     });
 });

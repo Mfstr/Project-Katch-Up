@@ -1,5 +1,6 @@
 import ical from 'node-ical';
 import { supabase } from './supabaseClient.js';
+import { fetchPublicText } from './safeFetch.js';
 
 const getDbClient = (token?: string) => {
   if (token && typeof (supabase as unknown as { createAuthClient?: (t?: string) => typeof supabase }).createAuthClient === 'function') {
@@ -40,13 +41,8 @@ export const syncCalendar = async (
   calendarId?: string | number,
   token?: string,
 ): Promise<number> => {
-  const response = await fetch(url);
-
-  if (!response.ok) {
-    throw new Error(`Failed to fetch calendar: ${response.status}`);
-  }
-
-  const data = await response.text();
+  // Only public http(s) addresses are fetched, with a timeout and size limit (prevents SSRF).
+  const data = await fetchPublicText(url);
   const webEvents = ical.sync.parseICS(data);
   const now = Date.now();
 
