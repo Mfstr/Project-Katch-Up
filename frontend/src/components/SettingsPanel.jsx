@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { useTheme } from '../context/ThemeContext.jsx';
 
 const EMPTY_TASK_FORM = { title: '', description: '', dueDate: '' };
 const EMPTY_CALENDAR_FORM = { name: '', url: '', description: '' };
@@ -44,6 +45,7 @@ export default function SettingsPanel({
     calendarNoticeFading = false,
 }) {
     const [isBackgroundOpen, setBackgroundOpen] = useState(false);
+    const { theme, toggleTheme } = useTheme();
 
     return (
         <aside className="settings-panel">
@@ -93,6 +95,15 @@ export default function SettingsPanel({
                 title="Manage Calendars"
             >
                 <span>C</span>
+            </button>
+
+            <button
+                type="button"
+                className={`settings-shortcut settings-theme-trigger${theme === 'dark' ? ' is-active' : ''}`}
+                onClick={toggleTheme}
+                title={theme === 'dark' ? 'Switch to light mode' : 'Switch to dark mode'}
+            >
+                <span>{theme === 'dark' ? '☀' : '☾'}</span>
             </button>
 
             {isBackgroundOpen && (

@@ -193,14 +193,14 @@ export default function FocusStatisticsChart() {
                         >
                             <CartesianGrid
                                 vertical={false}
-                                stroke="#dfe9e1"
+                                stroke="var(--focus-grid-line)"
                                 strokeDasharray="3 3"
                             />
                             <XAxis
                                 dataKay="label"
                                 tickline={false}
                                 axisLine={false}
-                                tick={{ fill: '#68716b', fontSize: 11 }}
+                                tick={{ fill: 'var(--chart-axis-text)', fontSize: 11 }}
                                 tickMargin={10}
                                 interval={0}
                             />
@@ -209,13 +209,13 @@ export default function FocusStatisticsChart() {
                                 allowDecimals
                                 tickLine={false}
                                 axisLine={false}
-                                tick={{ fill: '#68716b', fontSize: 10 }}
+                                tick={{ fill: 'var(--chart-axis-text)', fontSize: 10 }}
                                 tickFormatter={(value) => `${value}`}
                                 width={42}
                             />
                             <Tooltip
                                 content={<FocusChartTooltip />}
-                                cursor={{ fill: '#218B4314' }}
+                                cursor={{ fill: 'var(--chart-hover)' }}
                             />
                             <Bar
                                 dataKey="focusHours"

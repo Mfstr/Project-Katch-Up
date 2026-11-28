@@ -1,11 +1,13 @@
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { useState } from 'react';
+import { useTheme } from '../context/ThemeContext.jsx';
 
 export default function Authorize() {
     const location = useLocation();
     const navigate = useNavigate();
     const isRegister = location.pathname === '/register';
-    
+    const { theme, toggleTheme } = useTheme();
+
     const [error, setError] = useState('');
     const [isLoading, setIsLoading] = useState(false);
 
@@ -51,6 +53,14 @@ export default function Authorize() {
 
     return (
         <main className="auth-page">
+            <button
+                type="button"
+                className="auth-theme-toggle"
+                onClick={toggleTheme}
+                title={theme === 'dark' ? 'Switch to light mode' : 'Switch to dark mode'}
+            >
+                <span>{theme === 'dark' ? '☀' : '☾'}</span>
+            </button>
             <h1>{isRegister ? 'Register' : 'Login'}</h1>
             
             {error && (
