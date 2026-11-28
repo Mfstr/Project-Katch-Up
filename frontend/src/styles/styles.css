@@ -30,6 +30,31 @@
     --focus-message-border: #bdebd9;
     --focus-message-background: #edfbf5;
     --settings-panel-background: #fffdf6ef;
+    --button-label-color: #ffffff;
+    --danger-soft: #fff7f8;
+    --danger-border: #e8aab3;
+    --task-soft: #fff7f8;
+    --settings-shortcut-border: #f0a53b;
+    --settings-shortcut-text: #e88a00;
+    --settings-shortcut-background: #fffaf0;
+    --settings-shortcut-active: #ed970d;
+    --completed-task-border: #cbd8d0;
+    --completed-task-background: #f5f8f6;
+    --calendar-accent: #8b5cf6;
+    --calendar-accent-strong: #7c3aed;
+    --calendar-accent-soft: #f5f3ff;
+    --calendar-accent-border: #ddd6fe;
+    --calendar-surface: #f8fafc;
+    --calendar-border: #e2e8f0;
+    --calendar-muted: #64748b;
+    --calendar-delete-border: #fecdd3;
+    --streak-border: #f2d7bd;
+    --streak-background: #fff8f0;
+    --streak-number: #c45a20;
+    --streak-label: #87512f;
+    --focus-grid-line: #dfe9e1;
+    --chart-axis-text: #69816b;
+    --chart-hover: #218B4314;
 }
 
 * { box-sizing: border-box; }
@@ -138,7 +163,7 @@ button, a, .task-card, .refresh-tasks, .timer-controls button, .start-session, .
     flex: 0 0 auto;
     border: 1px solid transparent;
     background: var(--primary-color);
-    color: var(--surface-color);
+    color: var(--button-label-color);
     padding: 11px 15px;
     font-size: 13px;
     font-weight: 600;
@@ -157,7 +182,7 @@ button, a, .task-card, .refresh-tasks, .timer-controls button, .start-session, .
 }
 
 .logout-button:hover {
-    color: var(--surface-color);
+    color: var(--button-label-color);
     background: var(--danger-color);
 }
 
@@ -263,7 +288,7 @@ button, a, .task-card, .refresh-tasks, .timer-controls button, .start-session, .
 }
 
 .task-view-tab.is-active span {
-    color: var(--surface-color);
+    color: var(--button-label-color);
     background: var(--primary-color);
 }
 
@@ -295,9 +320,10 @@ button, a, .task-card, .refresh-tasks, .timer-controls button, .start-session, .
     cursor: not-allowed;
     opacity: 0.55;
 }
+
 .task-card.completed {
-    border-color: #cbd8d0;
-    background: #f5f8f6;
+    border-color: var(--completed-task-border);
+    background: var(--completed-task-background);
 }
 
 .task-card.completed .task-card-title {
@@ -431,7 +457,7 @@ button, a, .task-card, .refresh-tasks, .timer-controls button, .start-session, .
 
 .task-edit-save-button {
     border-color: var(--primary-color);
-    color: var(--surface-color);
+    color: var(--button-label-color);
     background: var(--primary-color);
 }
 
@@ -494,9 +520,9 @@ button, a, .task-card, .refresh-tasks, .timer-controls button, .start-session, .
     align-self: stretch;
     min-width: 82px;
     padding: 10px 14px;
-    border: 1px solid #e8aab3;
+    border: 1px solid var(--danger-border);
     color: var(--danger-color);
-    background: #fff7f8;
+    background: var(--danger-soft);
     font-size: 12px;
     font-weight: 700;
     cursor: pointer;
@@ -505,7 +531,7 @@ button, a, .task-card, .refresh-tasks, .timer-controls button, .start-session, .
 
 .task-delete-button:hover:not(:disabled) {
     border-color: var(--danger-color);
-    color: var(--surface-color);
+    color: var(--button-label-color);
     background: var(--danger-color);
 }
 
@@ -629,22 +655,22 @@ button, a, .task-card, .refresh-tasks, .timer-controls button, .start-session, .
 }
 
 .timer-start, .start-session {
-    color: var(--surface-color);
+    color: var(--button-label-color);
     background: var(--primary-color);
 }
 
 .timer-pause {
-    color: var(--surface-color);
+    color: var(--button-label-color);
     background: var(--navigation-color);
 }
 
 .timer-stop {
-    color: var(--surface-color);
+    color: var(--button-label-color);
     background: var(--danger-color);
 }
 
 .timer-reset {
-    color: var(--surface-color);
+    color: var(--button-label-color);
     background: var(--task-color);
 }
 
@@ -753,9 +779,9 @@ button:disabled {
     width: 54px;
     height: 54px;
     padding: 0;
-    border: 1px solid #f0a53b;
-    color: #e88a00;
-    background: #fffaf0;
+    border: 1px solid var(--settings-shortcut-border);
+    color: var(--settings-shortcut-text);
+    background: var(--settings-shortcut-background);
     font-size: 29px;
     line-height: 1;
 }
@@ -765,8 +791,8 @@ button.settings-shortcut {
 }
 
 .settings-shortcut.is-active, button.settings-shortcut:hover {
-    color: var(--surface-color);
-    background: #ed970d;
+    color: var(--button-label-color);
+    background: var(--settings-shortcut-active);
 }
 
 .settings-panel button.settings-youtube-trigger {
@@ -787,6 +813,21 @@ button.settings-shortcut {
 }
 
 .settings-panel button.settings-youtube-trigger:not(.is-active):hover {
+    border-color: var(--primary-color);
+    color: var(--primary-color);
+    background: var(--primary-soft);
+}
+
+.settings-panel button.settings-theme-trigger {
+    border-color: var(--border-color);
+    color: var(--text-primary);
+    background: var(--surface-muted);
+    font-size: 27px;
+    transition: color 160ms ease, background-color 160ms ease, border-color 160ms ease;
+}
+
+.settings-panel button.settings-theme-trigger:hover,
+.settings-panel button.settings-theme-trigger.is-active {
     border-color: var(--primary-color);
     color: var(--primary-color);
     background: var(--primary-soft);
@@ -839,6 +880,34 @@ button.settings-shortcut {
     backdrop-filter: blur(14px);
 }
 
+.auth-theme-toggle {
+    position: absolute;
+    top: 12px;
+    right: 12px;
+    display: grid;
+    place-items: center;
+    width: 38px;
+    height: 38px;
+    padding: 0;
+    border: 1px solid var(--border-color);
+    color: var(--text-primary);
+    background: var(--surface-muted);
+    font-size: 21px;
+    line-height: 1;
+    cursor: pointer;
+}
+
+.auth-theme-toggle:hover {
+    border-color: var(--primary-color);
+    color: var(--primary-color);
+    background: var(--primary-soft);
+}
+
+.auth-theme-toggle:focus-visible {
+    outline: 3px solid color-mix(in srgb, var(--primary-color) 30% transparent);
+    outline-offset: 2px;
+}
+
 .auth-page h1 {
     margin: 0 0 25px;
     font: 700 32px/1.1 var(--font-heading);
@@ -873,7 +942,7 @@ button.settings-shortcut {
 .auth-page form button {
     min-height: 46px;
     margin-top: 12px;
-    color: var(--surface-color);
+    color: var(--button-label-color);
     background: var(--primary-color);
     font-weight: 600;
     cursor: pointer;
@@ -893,25 +962,25 @@ button.settings-shortcut {
 .settings-task-trigger {
     border-color: var(--task-color);
     color: var(--task-color);
-    background: #f2f7ff;
+    background: var(--task-soft);
 }
 
 .settings-task-trigger.is-active,
 button.settings-task-trigger:hover {
-    color: var(--surface-color);
+    color: var(--button-label-color);
     background: var(--task-color);
 }
 
 .settings-calendar-trigger {
-    border-color: #8b5cf6;
-    color: #8b5cf6;
-    background: #f5f3ff;
+    border-color: var(--calendar-accent);
+    color: var(--calendar-accent);
+    background: var(--calendar-accent-soft);
 }
 
 .settings-calendar-trigger.is-active,
 button.settings-calendar-trigger:hover {
-    color: var(--surface-color);
-    background: #8b5cf6;
+    color: var(--button-label-color);
+    background: var(--calendar-accent);
 }
 
 .task-manager-panel {
@@ -1015,7 +1084,7 @@ button.settings-calendar-trigger:hover {
     margin-top: 5px;
     padding: 9px 12px;
     border: 1px solid transparent;
-    color: var(--surface-color);
+    color: var(--button-label-color);
     background: var(--primary-color);
     font-size: 12px;
     font-weight: 700;
@@ -1239,7 +1308,7 @@ button.settings-calendar-trigger:hover {
     min-height: 30px;
     padding: 6px 12px;
     border: 1px solid var(--primary-color);
-    color: var(--surface-color);
+    color: var(--button-label-color);
     font-family: var(--font-body);
     font-size: 11px;
     font-weight: 700;
@@ -1336,8 +1405,8 @@ button.settings-calendar-trigger:hover {
     gap: 7px;
     min-width: 0;
     padding: 7px 10px;
-    border: 1px solid #f2d7bd;
-    background: #fff8f0;
+    border: 1px solid var(--streak-border);
+    background: var(--streak-background);
 }
 
 .focus-streak-flame {
@@ -1353,13 +1422,13 @@ button.settings-calendar-trigger:hover {
 }
 
 .focus-streak-number {
-    color: #c45a20;
+    color: var(--streak-number);
     font: 800 clamp(23px, 1.9vw, 28px)/1 var(--font-heading);
     font-variant-numeric: tabular-nums;
 }
 
 .focus-streak-label {
-    color: #87512f;
+    color: var(--streak-label);
     font-size: 9px;
     font-weight: 700;
     letter-spacing: 0.04em;
@@ -1473,8 +1542,8 @@ button.settings-calendar-trigger:hover {
     gap: 12px;
     padding: 10px 16px;
     margin-bottom: 16px;
-    background: #f8fafc;
-    border: 1px solid #e2e8f0;
+    background: var(--calendar-surface);
+    border: 1px solid var(--calendar-border);
     border-radius: 8px;
     font-size: 13px;
 }
@@ -1486,6 +1555,7 @@ button.settings-calendar-trigger:hover {
     overflow: hidden;
     text-overflow: ellipsis;
     white-space: nowrap;
+    color: var(--text-primary);
 }
 
 .calendar-dashboard-icon {
@@ -1499,16 +1569,16 @@ button.settings-calendar-trigger:hover {
     font-weight: 600;
     background: var(--surface-color);
     color: var(--text-primary);
-    border: 1px solid #cbd5e1;
+    border: 1px solid var(--calendar-border);
     border-radius: 6px;
     cursor: pointer;
     transition: all 0.2s ease;
 }
 
 .calendar-dashboard-btn:hover {
-    background: #8b5cf6;
-    color: #ffffff;
-    border-color: #8b5cf6;
+    background: var(--calendar-accent);
+    color: var(--button-label-color);
+    border-color: var(--calendar-accent);
 }
 
 .calendar-subheading {
@@ -1532,7 +1602,7 @@ button.settings-calendar-trigger:hover {
     gap: 12px;
     padding: 10px 14px;
     background: var(--surface-color);
-    border: 1px solid #e2e8f0;
+    border: 1px solid var(--calendar-border);
     border-radius: 6px;
     box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
 }
@@ -1557,7 +1627,7 @@ button.settings-calendar-trigger:hover {
 
 .calendar-card-url {
     font-size: 10px;
-    color: #64748b;
+    color: var(--calendar-muted);
     font-family: monospace;
     overflow: hidden;
     text-overflow: ellipsis;
@@ -1575,17 +1645,17 @@ button.settings-calendar-trigger:hover {
     padding: 5px 9px;
     font-size: 11px;
     font-weight: 600;
-    color: #8b5cf6;
-    background: #f5f3ff;
-    border: 1px solid #ddd6fe;
+    color: var(--calendar-accent);
+    background: var(--calendar-accent-soft);
+    border: 1px solid var(--calendar-accent-border);
     border-radius: 4px;
     cursor: pointer;
     transition: all 0.15s ease;
 }
 
 .calendar-sync-btn:hover:not(:disabled) {
-    background: #8b5cf6;
-    color: #ffffff;
+    background: var(--calendar-accent);
+    color: var(--button-label-color);
 }
 
 .calendar-delete-btn {
@@ -1594,7 +1664,7 @@ button.settings-calendar-trigger:hover {
     font-weight: 600;
     color: var(--danger-color);
     background: var(--error-background);
-    border: 1px solid #fecdd3;
+    border: 1px solid var(--calendar-delete-border);
     border-radius: 4px;
     cursor: pointer;
     transition: all 0.15s ease;
@@ -1602,7 +1672,7 @@ button.settings-calendar-trigger:hover {
 
 .calendar-delete-btn:hover:not(:disabled) {
     background: var(--danger-color);
-    color: #ffffff;
+    color: var(--button-label-color);
 }
 
 .calendar-loading,
@@ -1614,10 +1684,106 @@ button.settings-calendar-trigger:hover {
 }
 
 .calendar-add-button {
-    background: #8b5cf6 !important;
-    border-color: #7c3aed !important;
+    background: var(--calendar-accent) !important;
+    border-color: var(--calendar-accent-strong) !important;
 }
 
 .calendar-add-button:hover:not(:disabled) {
-    background: #7c3aed !important;
+    background: var(--calendar-accent-strong) !important;
+}
+
+html[data-theme="dark"] {
+    color-scheme: dark;
+    --primary-color: #65d18a;
+    --primary-soft: #1b3a29;
+    --navigation-color: #e8bd35;
+    --timer-color: #ff7777;
+    --task-color: #91c5ff;
+    --task-hover: #65d18a26;
+    --surface-color: #171d21;
+    --surface-muted: #222b31;
+    --glass-background: #222b31ed;
+    --glass-border: #405058;
+    --glass-shadow: 0 12px 32px #00000070;
+    --text-primary: #f1f5f2;
+    --text-secondary: #b5c1bb;
+    --border-color: #40564a;
+    --danger-color: #ff8294;
+    --success-color: #6cdbb1;
+    --error-background: #3a2229;
+    --focus-message-border: #356b55;
+    --focus-message-background: #1c382c;
+    --settings-panel-background: #20292eee;
+    --button-label-color: #142019;
+    --danger-soft: #3a252b;
+    --danger-border: #78434d;
+    --task-soft: #1e3042;
+    --settings-shortcut-border: #755529;
+    --settings-shortcut-text: #ffd08a;
+    --settings-shortcut-background: #342a1d;
+    --settings-shortcut-active: #e8a52e;
+    --completed-task-border: #3e5148;
+    --completed-task-background: #202a26;
+    --calendar-accent: #b69cff;
+    --calendar-accent-strong: #c3aaff;
+    --calendar-accent-soft: #332849;
+    --calendar-accent-border: #625184;
+    --calendar-surface: #202a30;
+    --calendar-border: #3e4b53;
+    --calendar-muted: #aab8c3;
+    --calendar-delete-border: #78434d;
+    --streak-border: #6c4c38;
+    --streak-background: #382a22;
+    --streak-number: #ffb477;
+    --streak-label: #e6bd9d;
+    --focus-grid-line: #3c4b43;
+    --chart-axis-text: #b5c1bb;
+    --chart-hover: #65d18a25;
+}
+
+html[data-theme="dark"] body {
+    background: var(--surface-color);
+}
+
+html[data-theme="dark"] .smart-focus-ui.workspace-background-paper {
+    background-image: radial-gradient(#596052 0.55px, transparent 0.55px), linear-gradient(135deg, #202821, #171e1b);
+}
+
+html[data-theme="dark"] .smart-focus-ui.workspace-background-greenery {
+    background-image: radial-gradient(ellipse at 8% 12%, #294334 0, transparent 35%), radial-gradient(ellipse at 92% 88%, #253d32 0, transparent 34%), linear-gradient(135deg, #18231d, #1c2921);
+}
+
+html[data-theme="dark"] .smart-focus-ui.workspace-background-sunset {
+    background-image: radial-gradient(ellipse at 10% 10%, #48332c 0, transparent 38%), radial-gradient(ellipse at 90% 85%, #432e36 0, transparent 38%), linear-gradient(135deg, #241f20, #2b2022);
+}
+
+html[data-theme="dark"] .smart-focus-ui.workspace-background-blue-grid {
+    background-image: linear-gradient(#34485a 1px, transparent 1px), linear-gradient(90deg, #34485a 1px, transparent 1px), linear-gradient(135deg, #18232d, #1b2833);
+}
+
+html[data-theme="dark"] .task-create-form label span {
+    color: #aeb9b3;
+}
+
+html[data-theme="dark"] .calendar-dashboard-btn:hover,
+html[data-theme="dark"] .calendar-sync-btn:hover:not(:disabled) {
+    color: var(--button-label-color);
+    background: var(--calendar-accent);
+    border-color: var(--calendar-accent);
+}
+
+html[data-theme="dark"], .calendar-add-button {
+    color: var(--button-label-color);
+}
+
+html[data-theme="dark"] .calendar-card-item {
+    box-shadow: 0 1px 3px #00000035;
+}
+
+html[data-theme="dark"] .task-card-completed {
+    color: var(--text-secondary)
+}
+
+html[data-theme="dark"] .auth-theme-toggle {
+    border-color: var(--border-color);
 }
